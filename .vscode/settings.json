@@ -1,0 +1,14 @@
+{
+	// Dung khi mo rieng thu muc MVCSample trong VS Code
+	// dung JDK 21 giong Tomcat (khong dung Java 25 cua extension -> Tomcat bao UnsupportedClassVersionError)
+	"java.configuration.runtimes": [
+		{ "name": "JavaSE-21", "path": "C:\\Program Files\\Java\\jdk-21", "default": true }
+	],
+	// cho VS Code biet thu vien servlet cua Tomcat 10 (jakarta.servlet...)
+	"java.project.referencedLibraries": [
+		"C:/xampp/tomcat/lib/servlet-api.jar",
+		"C:/xampp/tomcat/lib/jsp-api.jar"
+	],
+	// thu muc chua code Java (bien dich vao WEB-INF/classes thi chay build.bat)
+	"java.project.sourcePaths": ["src"]
+}
