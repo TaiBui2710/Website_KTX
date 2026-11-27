@@ -1,1 +1,5 @@
-config/config.php
+WebContent/WEB-INF/classes/
+WebContent/assets/images/uploads/
+*.class
+.DS_Store
+Thumbs.db
