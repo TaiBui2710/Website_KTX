@@ -1,0 +1,200 @@
+/* assets/css/user.css */
+
+/* --- BỐ CỤC MÀN HÌNH CHÍNH USER --- */
+.user-dashboard-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 20px;
+}
+
+.dash-card {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 22px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.dash-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dash-card-header h4 {
+    color: var(--primary-blue);
+    font-size: 16px;
+    text-transform: uppercase;
+}
+
+/* Bảng đếm ngược hạn đóng tiền */
+.countdown-panel {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
+    color: var(--white);
+    border-top: 4px solid var(--primary-yellow);
+}
+
+.countdown-panel .dash-card-header {
+    border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+
+.countdown-panel .dash-card-header h4 {
+    color: var(--primary-yellow);
+}
+
+.deadline-text {
+    font-size: 14px;
+    color: #e2e8f0;
+    margin-bottom: 18px;
+}
+
+.countdown-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    text-align: center;
+}
+
+.cd-box {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 242, 0, 0.4);
+    border-radius: 6px;
+    padding: 14px 6px;
+}
+
+.cd-val {
+    display: block;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--primary-yellow);
+    line-height: 1.1;
+}
+
+.cd-lbl {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    margin-top: 5px;
+    color: var(--white);
+}
+
+/* Chi tiết số tiền phải đóng */
+.fee-panel {
+    border-top: 4px solid var(--primary-blue);
+}
+
+.fee-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border-color);
+    font-size: 14px;
+}
+
+.fee-summary {
+    margin-top: 15px;
+    padding: 14px;
+    background-color: #f0f4ff;
+    border-left: 4px solid var(--primary-blue);
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fee-amount {
+    font-size: 20px;
+    font-weight: 800;
+    color: #dc2626;
+}
+
+/* --- DANH SÁCH CHỌN PHÒNG --- */
+.room-select-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.room-card {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-top: 4px solid var(--primary-blue);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.room-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.room-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--primary-blue);
+}
+
+.room-info-list {
+    list-style: none;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.room-info-list li {
+    margin-bottom: 6px;
+}
+
+.room-cost {
+    font-size: 15px;
+    font-weight: 700;
+    color: #dc2626;
+    margin-bottom: 12px;
+}
+
+.btn-full {
+    width: 100%;
+    text-align: center;
+}
+
+/* --- TRANG PROFILE USER --- */
+.profile-card {
+    max-width: 750px;
+    padding: 25px;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.col-full {
+    grid-column: span 2;
+}
+
+.profile-footer-btns {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .user-dashboard-grid,
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+    .col-full {
+        grid-column: span 1;
+    }
+}

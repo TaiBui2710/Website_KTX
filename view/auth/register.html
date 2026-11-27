@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Tài Khoản - Ký Túc Xá Bách Khoa</title>
+    <link rel="stylesheet" href="../../assets/css/base.css">
+    <link rel="stylesheet" href="../../assets/css/auth.css">
+</head>
+<body>
+
+<div class="auth-container register-box">
+    <div class="auth-header">
+        <img src="../../assets/images/logo-bk.png" alt="Logo Đại học Bách Khoa">
+        <h2>Đăng Ký Tài Khoản Hệ Thống</h2>
+        <p>Tạo tài khoản Sinh viên nội trú hoặc Quản trị viên KTX</p>
+    </div>
+
+    <form action="../../controller/AuthController.php?action=register" method="POST" onsubmit="return checkPassword()">
+        <div class="auth-grid">
+            <div class="auth-group full-col">
+                <label for="role">Loại tài khoản (role) *</label>
+                <select id="role" name="role" onchange="toggleRoleFields()" required>
+                    <option value="user" selected>Sinh viên nội trú (user)</option>
+                    <option value="admin">Quản trị viên KTX (admin)</option>
+                </select>
+            </div>
+
+            <div class="auth-group">
+                <label for="username">Tên đăng nhập (username) *</label>
+                <input type="text" id="username" name="username" placeholder="VD: sv006 hoặc admin2" required>
+            </div>
+
+            <div class="auth-group" id="studentCodeGroup">
+                <label for="student_code">Mã số sinh viên (student_code) *</label>
+                <input type="text" id="student_code" name="student_code" placeholder="VD: 2251010006" required>
+            </div>
+
+            <div class="auth-group">
+                <label for="full_name">Họ và tên (full_name) *</label>
+                <input type="text" id="full_name" name="full_name" placeholder="Nguyễn Văn A" required>
+            </div>
+
+            <div class="auth-group">
+                <label for="gender" id="genderLabel">Giới tính (gender) *</label>
+                <select id="gender" name="gender" required>
+                    <option value="">-- Chọn giới tính --</option>
+                    <option value="male">Nam</option>
+                    <option value="female">Nữ</option>
+                </select>
+            </div>
+
+            <div class="auth-group">
+                <label for="email">Email liên hệ (email) *</label>
+                <input type="email" id="email" name="email" placeholder="example@ktx.edu.vn" required>
+            </div>
+
+            <div class="auth-group">
+                <label for="phone">Số điện thoại (phone)</label>
+                <input type="text" id="phone" name="phone" placeholder="0901xxxxxx">
+            </div>
+
+            <div class="auth-group">
+                <label for="password">Mật khẩu *</label>
+                <input type="password" id="password" name="password" placeholder="Tối thiểu 6 ký tự" minlength="6" required>
+            </div>
+
+            <div class="auth-group">
+                <label for="confirm_password">Nhập lại mật khẩu *</label>
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="Xác nhận mật khẩu" minlength="6" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-blue btn-auth">Đăng ký tài khoản</button>
+    </form>
+
+    <div class="auth-links">
+        <span>Đã có tài khoản? <a href="login.html">Đăng nhập tại đây</a></span>
+        <a href="../guest/index_guest.html" class="back-home">← Quay lại trang chủ (Guest)</a>
+    </div>
+</div>
+
+<script>
+    // Ẩn MSSV và bỏ bắt buộc Giới tính khi chọn Admin (khớp schema users trong DB)
+    function toggleRoleFields() {
+        const role = document.getElementById('role').value;
+        const studentGroup = document.getElementById('studentCodeGroup');
+        const studentInput = document.getElementById('student_code');
+        const genderSelect = document.getElementById('gender');
+        const genderLabel = document.getElementById('genderLabel');
+
+        if (role === 'admin') {
+            studentGroup.style.display = 'none';
+            studentInput.required = false;
+            studentInput.value = '';
+            genderSelect.required = false;
+            genderLabel.innerText = 'Giới tính (gender - Tùy chọn)';
+        } else {
+            studentGroup.style.display = 'block';
+            studentInput.required = true;
+            genderSelect.required = true;
+            genderLabel.innerText = 'Giới tính (gender) *';
+        }
+    }
+</script>
+
+</body>
+</html>
