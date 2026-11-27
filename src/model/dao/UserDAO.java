@@ -13,7 +13,7 @@ public class UserDAO {
         u.setId(rs.getInt("id"));
         u.setUsername(rs.getString("username"));
         u.setPassword(rs.getString("password"));
-        u.setFullName(rs.getString("fullname"));
+        u.setFullName(rs.getString("full_name"));
         u.setEmail(rs.getString("email"));
         u.setPhone(rs.getString("phone"));
         u.setGender(rs.getString("gender"));
@@ -42,6 +42,12 @@ public class UserDAO {
     public User getUserByUsername(String username)
     {
         ArrayList<User> list = query("select * from users where username=?", username);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    public User getUserById(int id)
+    {
+        ArrayList<User> list = query("select * from users where id=?", id);
         return list.isEmpty() ? null : list.get(0);
     }
 
