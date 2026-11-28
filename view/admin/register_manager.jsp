@@ -1,9 +1,11 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="../../assets/css/base.css">
-    <link rel="stylesheet" href="../../assets/css/admin.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/base.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin.css">
 </head>
 <body>
 
@@ -35,7 +37,13 @@
                     <td>Muốn ở cùng phòng bạn An</td>
                     <td><span class="badge badge-maintenance">Chờ duyệt</span></td>
                     <td class="action-btns">
-                        <button class="btn-sm btn-edit" onclick="openModal('approveRegModal')">Duyệt / Từ chối</button>
+                        <button type="button" class="btn-sm btn-edit"
+                                data-id="7"
+                                data-status="approved"
+                                data-checkin="2026-12-01"
+                                data-checkout="2027-06-30"
+                                data-note=""
+                                onclick="openRegModal(this)">Duyệt / Từ chối</button>
                     </td>
                 </tr>
                 <tr>
@@ -46,7 +54,13 @@
                     <td>—</td>
                     <td><span class="badge badge-available">Đã duyệt</span></td>
                     <td class="action-btns">
-                        <button class="btn-sm btn-edit" onclick="openModal('approveRegModal')">Cập nhật</button>
+                        <button type="button" class="btn-sm btn-edit"
+                                data-id="1"
+                                data-status="approved"
+                                data-checkin="2026-09-01"
+                                data-checkout="2026-12-20"
+                                data-note=""
+                                onclick="openRegModal(this)">Cập nhật</button>
                     </td>
                 </tr>
             </tbody>
@@ -80,7 +94,10 @@
                     <td>Muốn ở tiếp học kỳ 2</td>
                     <td><span class="badge badge-maintenance">Chờ xử lý</span></td>
                     <td class="action-btns">
-                        <button class="btn-sm btn-edit" onclick="openModal('processReqModal')">Xử lý yêu cầu</button>
+                        <button type="button" class="btn-sm btn-edit"
+                                data-id="4"
+                                data-type="Gia hạn"
+                                onclick="openReqModal(this)">Xử lý yêu cầu</button>
                     </td>
                 </tr>
             </tbody>
@@ -92,13 +109,15 @@
 <div class="modal-backdrop" id="approveRegModal">
     <div class="modal-box">
         <div class="modal-header">
-            <h4>Xử Lý Đơn Đăng Ký Phòng #7</h4>
-            <button class="btn-close" onclick="closeModal('approveRegModal')">✕</button>
+            <h4 id="regModalTitle">Xử Lý Đơn Đăng Ký Phòng</h4>
+            <button type="button" class="btn-close" onclick="closeModal('approveRegModal')">✕</button>
         </div>
-        <form>
+        <form id="approveRegForm" action="${pageContext.request.contextPath}/admin/process-registration" method="POST">
+            <input type="hidden" name="id" id="reg_id">
+
             <div class="form-group">
                 <label>Quyết định duyệt (status) *</label>
-                <select id="regStatus" onchange="toggleRegDates()" required>
+                <select name="status" id="regStatus" onchange="toggleRegDates()" required>
                     <option value="approved">Duyệt đơn (approved)</option>
                     <option value="rejected">Từ chối đơn (rejected)</option>
                     <option value="cancelled">Hủy đơn (cancelled)</option>
@@ -107,16 +126,16 @@
             <div id="regDatesGroup">
                 <div class="form-group">
                     <label>Ngày nhận phòng (check_in_date) *</label>
-                    <input type="date" id="checkInInput" value="2026-12-01" required>
+                    <input type="date" name="check_in_date" id="checkInInput" required>
                 </div>
                 <div class="form-group">
                     <label>Ngày trả phòng (check_out_date) * <small>(Phải sau ngày nhận phòng)</small></label>
-                    <input type="date" id="checkOutInput" value="2027-06-30" required>
+                    <input type="date" name="check_out_date" id="checkOutInput" required>
                 </div>
             </div>
             <div class="form-group">
                 <label>Phản hồi / Lý do từ chối của Admin (admin_note)</label>
-                <input type="text" placeholder="Nhập ghi chú gửi sinh viên (nếu có)...">
+                <input type="text" name="admin_note" id="reg_admin_note" maxlength="255" placeholder="Nhập ghi chú gửi sinh viên (nếu có)...">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn" onclick="closeModal('approveRegModal')">Hủy</button>
@@ -130,20 +149,22 @@
 <div class="modal-backdrop" id="processReqModal">
     <div class="modal-box">
         <div class="modal-header">
-            <h4>Xử Lý Yêu Cầu Gia Hạn #4</h4>
-            <button class="btn-close" onclick="closeModal('processReqModal')">✕</button>
+            <h4 id="reqModalTitle">Xử Lý Yêu Cầu</h4>
+            <button type="button" class="btn-close" onclick="closeModal('processReqModal')">✕</button>
         </div>
-        <form>
+        <form id="processReqForm" action="${pageContext.request.contextPath}/admin/process-request" method="POST">
+            <input type="hidden" name="id" id="req_id">
+
             <div class="form-group">
                 <label>Trạng thái xử lý *</label>
-                <select required>
+                <select name="status" id="req_status" required>
                     <option value="approved">Đồng ý (approved)</option>
                     <option value="rejected">Từ chối (rejected)</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Phản hồi của Admin (admin_note)</label>
-                <input type="text" placeholder="VD: Đồng ý gia hạn đến 30/06/2027">
+                <input type="text" name="admin_note" id="req_admin_note" maxlength="255" placeholder="VD: Đồng ý gia hạn đến 30/06/2027">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn" onclick="closeModal('processReqModal')">Hủy</button>
@@ -154,8 +175,35 @@
 </div>
 
 <script>
-    function openModal(id) { document.getElementById(id).classList.add('show'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    // Mở Modal duyệt đơn & đổ dữ liệu của đơn được chọn
+    function openRegModal(btn) {
+        const id = btn.dataset.id || '';
+        document.getElementById('regModalTitle').innerText = 'Xử Lý Đơn Đăng Ký Phòng #' + id;
+        document.getElementById('reg_id').value = id;
+        document.getElementById('regStatus').value = btn.dataset.status || 'approved';
+        document.getElementById('checkInInput').value = btn.dataset.checkin || '';
+        document.getElementById('checkOutInput').value = btn.dataset.checkout || '';
+        document.getElementById('reg_admin_note').value = btn.dataset.note || '';
+
+        toggleRegDates();
+        document.getElementById('approveRegModal').classList.add('show');
+    }
+
+    // Mở Modal xử lý yêu cầu gia hạn / trả sớm / hủy
+    function openReqModal(btn) {
+        const id = btn.dataset.id || '';
+        const type = btn.dataset.type || 'Yêu cầu';
+        document.getElementById('reqModalTitle').innerText = 'Xử Lý Yêu Cầu ' + type + ' #' + id;
+        document.getElementById('req_id').value = id;
+        document.getElementById('req_status').value = 'approved';
+        document.getElementById('req_admin_note').value = '';
+
+        document.getElementById('processReqModal').classList.add('show');
+    }
 
     // Bắt buộc nhập ngày nhận/trả khi chọn Duyệt đơn (khớp ràng buộc chk_reg_approved_dates)
     function toggleRegDates() {
@@ -173,6 +221,51 @@
             checkOut.required = false;
         }
     }
+
+    // Kiểm tra định dạng ngày & ràng buộc logic trước khi submit (khớp chk_reg_dates)
+    document.getElementById('approveRegForm').addEventListener('submit', function (e) {
+        const status = document.getElementById('regStatus').value;
+        const checkIn = document.getElementById('checkInInput').value;
+        const checkOut = document.getElementById('checkOutInput').value;
+        const noteInput = document.getElementById('reg_admin_note');
+
+        if (status === 'approved') {
+            if (!checkIn || !checkOut) {
+                alert('Vui lòng chọn đầy đủ Ngày nhận phòng và Ngày trả phòng!');
+                e.preventDefault();
+                return;
+            }
+            if (checkOut <= checkIn) {
+                alert('Ngày trả phòng phải sau Ngày nhận phòng!');
+                document.getElementById('checkOutInput').focus();
+                e.preventDefault();
+                return;
+            }
+        }
+
+        if ((status === 'rejected' || status === 'cancelled') && noteInput.value.trim() === '') {
+            alert('Vui lòng nhập lý do từ chối / hủy đơn vào ô Phản hồi của Admin!');
+            noteInput.focus();
+            e.preventDefault();
+            return;
+        }
+
+        noteInput.value = noteInput.value.trim();
+    });
+
+    // Đóng modal khi bấm nền tối hoặc phím ESC
+    ['approveRegModal', 'processReqModal'].forEach(modalId => {
+        document.getElementById(modalId).addEventListener('click', function (e) {
+            if (e.target === this) closeModal(modalId);
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeModal('approveRegModal');
+            closeModal('processReqModal');
+        }
+    });
 </script>
 
 </body>

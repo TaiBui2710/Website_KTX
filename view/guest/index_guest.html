@@ -23,7 +23,6 @@
     <header class="main-header">
         <div class="container header-wrapper">
             <div class="logo-box">
-                <!-- BẠN THAY LINK LOGO TRƯỜNG VÀO SRC BÊN DƯỚI -->
                 <img src="../../assets/images/logo-bk.png" alt="Logo Trường Đại học Bách Khoa">
                 <div class="logo-text">
                     <h1>BAN QUẢN LÝ KÝ TÚC XÁ</h1>
@@ -50,27 +49,28 @@
         </div>
     </header>
 
-    <!-- 3. NAVIGATION BAR (CHỈ CÓ "THÔNG TIN" TRỎ XUỐNG & "BIỂU MẪU") -->
+    <!-- 3. NAVIGATION BAR -->
     <nav class="navbar">
         <div class="container">
             <ul class="nav-menu">
                 <!-- Mục 1: Thông tin (Có menu trỏ xuống) -->
                 <li class="nav-item active">
-                    <a href="home.html" target="content-frame" class="nav-link">Thông tin ▾</a>
+                    <a href="home.jsp" target="content-frame" class="nav-link">Thông tin ▾</a>
                     <ul class="dropdown-menu">
-                        <li><a href="home.html#gioi-thieu" target="content-frame">Giới thiệu & Hình ảnh phòng</a></li>
-                        <li><a href="home.html#bang-gia" target="content-frame">Xem thông tin phòng & Giá cả</a></li>
-                        <li><a href="home.html#feedback" target="content-frame">Gửi Feedback / Góp ý</a></li>
+                        <li><a href="home.jsp#gioi-thieu" target="content-frame">Giới thiệu & Hình ảnh phòng</a></li>
+                        <li><a href="home.jsp#bang-gia" target="content-frame">Xem thông tin phòng & Giá cả</a></li>
+                        <li><a href="home.jsp#feedback" target="content-frame">Xem Feedback / Đánh giá</a></li>
                     </ul>
                 </li>
 
-                <!-- Mục 2: Biểu mẫu (Trỏ đến trang biểu mẫu trong iframe) -->
+                <!-- Mục 2: Biểu mẫu -->
                 <li class="nav-item">
-                    <a href="forms.html" target="content-frame" class="nav-link">Biểu mẫu</a>
+                    <a href="forms.jsp" target="content-frame" class="nav-link">Biểu mẫu</a>
                 </li>
+
                 <li class="nav-auth">
-                    <a href="../auth/login.html" class="auth-btn btn-login">Đăng nhập</a>
-                    <a href="../auth/register.html" class="auth-btn btn-register">Đăng ký</a>
+                    <a href="../auth/login.jsp" class="auth-btn btn-login">Đăng nhập</a>
+                    <a href="../auth/register.jsp" class="auth-btn btn-register">Đăng ký</a>
                 </li>
             </ul>
         </div>
@@ -78,7 +78,7 @@
 
     <!-- 4. KHUNG IFRAME HIỂN THỊ NỘI DUNG -->
     <main class="iframe-wrapper">
-        <iframe src="home.html" name="content-frame" id="main-frame" onload="resizeIframe(this)"></iframe>
+        <iframe src="home.jsp" name="content-frame" id="main-frame" onload="resizeIframe(this)"></iframe>
     </main>
 
     <!-- 5. FOOTER (THÔNG TIN LIÊN HỆ CUỐI TRANG) -->
@@ -87,8 +87,7 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <h3>Ban Quản Lý Ký Túc Xá</h3>
-                    <p>Môi trường nội trú an toàn, văn minh, hỗ trợ tối đa cho sinh viên trong suốt quá trình học tập và
-                        rèn luyện.</p>
+                    <p>Môi trường nội trú an toàn, văn minh, hỗ trợ tối đa cho sinh viên trong suốt quá trình học tập và rèn luyện.</p>
                 </div>
                 <div class="footer-col">
                     <h3>Thông Tin Liên Hệ</h3>
@@ -102,9 +101,9 @@
                 <div class="footer-col">
                     <h3>Hỗ Trợ Nhanh</h3>
                     <ul>
-                        <li><a href="home.html#bang-gia" target="content-frame">› Bảng giá phòng & Điện nước</a></li>
-                        <li><a href="forms.html" target="content-frame">› Tải biểu mẫu đăng ký nội trú</a></li>
-                        <li><a href="feedback.html" target="content-frame">› Hòm thư góp ý sinh viên</a></li>
+                        <li><a href="home.jsp#bang-gia" target="content-frame">› Bảng giá phòng & Điện nước</a></li>
+                        <li><a href="forms.jsp" target="content-frame">› Tải biểu mẫu đăng ký nội trú</a></li>
+                        <li><a href="home.jsp#feedback" target="content-frame">› Ý kiến & Đánh giá sinh viên</a></li>
                     </ul>
                 </div>
             </div>
@@ -117,9 +116,15 @@
     <script>
         function resizeIframe(obj) {
             setTimeout(() => {
+                obj.style.height = '0px';
                 obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 30 + 'px';
             }, 100);
         }
+
+        window.addEventListener('resize', function () {
+            const mainFrame = document.getElementById('main-frame');
+            if (mainFrame) resizeIframe(mainFrame);
+        });
     </script>
 </body>
 
