@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../../assets/css/base.css">
+    <link rel="stylesheet" href="../../assets/css/admin.css">
+</head>
+<body>
+
+<div class="page-wrapper">
+    <div class="page-header">
+        <h3>Quản Lý Kho Form Mẫu Đơn (PDF)</h3>
+        <button class="btn btn-blue" onclick="openModal('formModal', 'Thêm Mẫu Đơn Mới')">+ Thêm mẫu đơn PDF</button>
+    </div>
+
+    <div class="table-card">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên biểu mẫu</th>
+                    <th>Mô tả đối tượng áp dụng</th>
+                    <th>File đính kèm</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>Đơn xin đăng ký ở nội trú Ký túc xá</strong></td>
+                    <td>Dành cho tân sinh viên và sinh viên các khóa đăng ký mới</td>
+                    <td><a href="../../assets/pdf/don-dang-ky-noi-tru.pdf" target="_blank" class="pdf-link">Xem PDF ↗</a></td>
+                    <td class="action-btns">
+                        <button class="btn-sm btn-edit" onclick="openModal('formModal', 'Cập Nhật Mẫu Đơn')">Sửa</button>
+                        <button class="btn-sm btn-delete" onclick="confirm('Xóa mẫu đơn này?')">Xóa</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="formModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h4 id="formModalTitle">Thêm Mẫu Đơn Mới</h4>
+            <button class="btn-close" onclick="closeModal('formModal')">✕</button>
+        </div>
+        <form enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Tên mẫu đơn *</label>
+                <input type="text" placeholder="VD: Đơn xin gia hạn lưu trú" required>
+            </div>
+            <div class="form-group">
+                <label>Mô tả ngắn gọn *</label>
+                <textarea rows="3" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Tải lên file PDF mẫu đơn *</label>
+                <input type="file" accept=".pdf" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" onclick="closeModal('formModal')">Hủy</button>
+                <button type="submit" class="btn btn-blue">Lưu mẫu đơn</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal(id, title) {
+        if (title) document.getElementById('formModalTitle').innerText = title;
+        document.getElementById(id).classList.add('show');
+    }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+</script>
+
+</body>
+</html>

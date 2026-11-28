@@ -1,0 +1,126 @@
+/* assets/css/auth.css */
+body {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.auth-container {
+    background: var(--white);
+    width: 100%;
+    max-width: 440px;
+    border-radius: 10px;
+    border-top: 5px solid var(--primary-yellow);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    padding: 32px 30px;
+}
+
+.auth-container.register-box {
+    max-width: 620px;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.auth-header img {
+    height: 56px;
+    margin-bottom: 10px;
+}
+
+.auth-header h2 {
+    color: var(--primary-blue);
+    font-size: 20px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.auth-header p {
+    color: var(--text-gray);
+    font-size: 13px;
+}
+
+.auth-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.auth-group {
+    margin-bottom: 15px;
+}
+
+.auth-group.full-col {
+    grid-column: span 2;
+}
+
+.auth-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-dark);
+}
+
+.auth-group input,
+.auth-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+}
+
+.auth-group input:focus,
+.auth-group select:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+}
+
+.btn-auth {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    text-transform: uppercase;
+    margin-top: 6px;
+}
+
+.auth-links {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.auth-links a {
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+.back-home {
+    color: var(--text-gray) !important;
+    font-weight: 500 !important;
+    font-size: 13px;
+}
+
+@media (max-width: 600px) {
+    .auth-grid {
+        grid-template-columns: 1fr;
+    }
+    .auth-group.full-col {
+        grid-column: span 1;
+    }
+}

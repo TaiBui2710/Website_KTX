@@ -1,0 +1,103 @@
+/* css/base.css */
+:root {
+    /* Tông màu chủ đạo lấy từ Logo Bách Khoa Đà Nẵng */
+    --primary-blue: #0020C2;       /* Xanh dương đậm logo */
+    --dark-blue: #001580;          /* Xanh dương tối khi hover */
+    --primary-yellow: #FFF200;     /* Vàng tươi logo */
+    --accent-yellow: #F5C700;      /* Vàng đậm hơn để làm nền nút/chữ dễ đọc */
+    --logo-red: #D90000;           /* Đỏ nhấn (nếu cần cho thông báo khẩn) */
+    
+    /* Màu trung tính */
+    --text-dark: #222222;
+    --text-gray: #666666;
+    --bg-light: #F4F6F9;
+    --white: #FFFFFF;
+    --border-color: #E0E4E8;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-dark);
+    background-color: var(--white);
+    line-height: 1.6;
+    font-size: 15px;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.25s ease;
+}
+
+ul {
+    list-style: none;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+.container {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.section-padding {
+    padding: 50px 0;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--primary-blue);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.section-title::after {
+    content: "";
+    display: block;
+    width: 60px;
+    height: 4px;
+    background-color: var(--accent-yellow);
+    margin: 10px auto 30px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 22px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.btn-yellow {
+    background-color: var(--primary-yellow);
+    color: var(--primary-blue);
+}
+
+.btn-yellow:hover {
+    background-color: var(--accent-yellow);
+}
+
+.btn-blue {
+    background-color: var(--primary-blue);
+    color: var(--white);
+}
+
+.btn-blue:hover {
+    background-color: var(--dark-blue);
+}

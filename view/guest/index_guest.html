@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ký Túc Xá Sinh Viên - Đại Học Bách Khoa</title>
+    <link rel="stylesheet" href="../../assets/css/base.css">
+    <link rel="stylesheet" href="../../assets/css/guest.css">
+</head>
+
+<body>
+
+    <!-- 1. TOP BAR -->
+    <div class="top-bar">
+        <div class="container">
+            <span>📍 54 Nguyễn Lương Bằng, Liên Chiểu, Đà Nẵng</span>
+            <span>Cổng thông tin tra cứu dành cho Sinh viên & Phụ huynh</span>
+        </div>
+    </div>
+
+    <!-- 2. MAIN HEADER (LOGO TRƯỜNG + THÔNG TIN NHANH) -->
+    <header class="main-header">
+        <div class="container header-wrapper">
+            <div class="logo-box">
+                <!-- BẠN THAY LINK LOGO TRƯỜNG VÀO SRC BÊN DƯỚI -->
+                <img src="../../assets/images/logo-bk.png" alt="Logo Trường Đại học Bách Khoa">
+                <div class="logo-text">
+                    <h1>BAN QUẢN LÝ KÝ TÚC XÁ</h1>
+                    <span>TRƯỜNG ĐẠI HỌC BÁCH KHOA - ĐẠI HỌC ĐÀ NẴNG</span>
+                </div>
+            </div>
+
+            <div class="header-info-group">
+                <div class="info-item">
+                    <div class="info-icon">☎</div>
+                    <div class="info-detail">
+                        <strong>0236.3842.308</strong>
+                        <span>ktx@dut.udn.vn</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">🕒</div>
+                    <div class="info-detail">
+                        <strong>07:30 - 17:00</strong>
+                        <span>Thứ 2 đến Thứ 6</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3. NAVIGATION BAR (CHỈ CÓ "THÔNG TIN" TRỎ XUỐNG & "BIỂU MẪU") -->
+    <nav class="navbar">
+        <div class="container">
+            <ul class="nav-menu">
+                <!-- Mục 1: Thông tin (Có menu trỏ xuống) -->
+                <li class="nav-item active">
+                    <a href="home.html" target="content-frame" class="nav-link">Thông tin ▾</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="home.html#gioi-thieu" target="content-frame">Giới thiệu & Hình ảnh phòng</a></li>
+                        <li><a href="home.html#bang-gia" target="content-frame">Xem thông tin phòng & Giá cả</a></li>
+                        <li><a href="home.html#feedback" target="content-frame">Gửi Feedback / Góp ý</a></li>
+                    </ul>
+                </li>
+
+                <!-- Mục 2: Biểu mẫu (Trỏ đến trang biểu mẫu trong iframe) -->
+                <li class="nav-item">
+                    <a href="forms.html" target="content-frame" class="nav-link">Biểu mẫu</a>
+                </li>
+                <li class="nav-auth">
+                    <a href="../auth/login.html" class="auth-btn btn-login">Đăng nhập</a>
+                    <a href="../auth/register.html" class="auth-btn btn-register">Đăng ký</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 4. KHUNG IFRAME HIỂN THỊ NỘI DUNG -->
+    <main class="iframe-wrapper">
+        <iframe src="home.html" name="content-frame" id="main-frame" onload="resizeIframe(this)"></iframe>
+    </main>
+
+    <!-- 5. FOOTER (THÔNG TIN LIÊN HỆ CUỐI TRANG) -->
+    <footer class="main-footer" id="lien-he">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>Ban Quản Lý Ký Túc Xá</h3>
+                    <p>Môi trường nội trú an toàn, văn minh, hỗ trợ tối đa cho sinh viên trong suốt quá trình học tập và
+                        rèn luyện.</p>
+                </div>
+                <div class="footer-col">
+                    <h3>Thông Tin Liên Hệ</h3>
+                    <ul>
+                        <li>📍 Văn phòng: Khu A - KTX Đại học Bách Khoa</li>
+                        <li>📞 Điện thoại trực ban: 0236.3842.308</li>
+                        <li>📧 Email: banquanlyktx@dut.udn.vn</li>
+                        <li>🌐 Website: ktx.dut.udn.vn</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Hỗ Trợ Nhanh</h3>
+                    <ul>
+                        <li><a href="home.html#bang-gia" target="content-frame">› Bảng giá phòng & Điện nước</a></li>
+                        <li><a href="forms.html" target="content-frame">› Tải biểu mẫu đăng ký nội trú</a></li>
+                        <li><a href="feedback.html" target="content-frame">› Hòm thư góp ý sinh viên</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2026 Ban Quản Lý Ký Túc Xá - Trường Đại Học Bách Khoa. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function resizeIframe(obj) {
+            setTimeout(() => {
+                obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 30 + 'px';
+            }, 100);
+        }
+    </script>
+</body>
+
+</html>
