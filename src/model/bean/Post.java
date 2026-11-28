@@ -7,7 +7,6 @@ public class Post {
     private String title;
     private String content;
     private String category;
-    private String image;
     private boolean published;
     private int authorId;
     private LocalDateTime createdAt;
@@ -36,12 +35,6 @@ public class Post {
     }
     public void setCategory(String category) {
         this.category = category;
-    }
-    public String getImage() {
-        return image;
-    }
-    public void setImage(String image) {
-        this.image = image;
     }
     public boolean isPublished() {
         return published;

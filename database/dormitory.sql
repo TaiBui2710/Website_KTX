@@ -1,7 +1,7 @@
 -- =====================================================================
 --  HỆ THỐNG ĐĂNG KÝ PHÒNG KÝ TÚC XÁ
 --  CSDL: MySQL 8.0.16+ (cần hỗ trợ CHECK và generated column)
---  Gồm 5 bảng: users, rooms, registrations, registration_requests, posts
+--  Gồm 6 bảng: users, rooms, registrations, registration_requests, posts, feedbacks
 --  + 1 view: v_room_occupancy (số người đang ở / chỗ trống của mỗi phòng)
 --
 --  Tài khoản demo: mật khẩu tất cả là 123456
@@ -113,13 +113,30 @@ CREATE TABLE posts (
     title         VARCHAR(200) NOT NULL,
     content       TEXT NOT NULL,
     category      ENUM('news','notice','rule') NOT NULL DEFAULT 'news',
-    image         VARCHAR(255) NULL,
     is_published  BOOLEAN NOT NULL DEFAULT FALSE,              -- false = guest không thấy
     author_id     INT NOT NULL,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_post_author FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE RESTRICT,
     INDEX idx_post_published (is_published, category)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- 6. FEEDBACKS: góp ý của sinh viên, admin trả lời
+--    is_published = TRUE -> hiện cho guest xem (giống posts)
+-- ---------------------------------------------------------------------
+CREATE TABLE feedbacks (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    user_id       INT NOT NULL,                                -- sinh viên gửi
+    content       TEXT NOT NULL,
+    reply         TEXT NULL,                                   -- admin trả lời
+    status        ENUM('new','replied') NOT NULL DEFAULT 'new',
+    is_published  BOOLEAN NOT NULL DEFAULT FALSE,              -- false = guest không thấy
+    created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    replied_at    DATETIME NULL,
+
+    CONSTRAINT fk_feedback_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_feedback_published (is_published, status)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
@@ -186,19 +203,25 @@ INSERT INTO registration_requests (id, registration_id, type, requested_date, re
 (3, 2, 'checkout', '2026-12-10', 'Về quê thực tập',        'approved', 'Đồng ý, bàn giao ngày 09/12',    '2026-11-20 09:00:00', '2026-11-21 09:00:00'),
 (4, 1, 'extend',   '2027-06-30', 'Muốn ở tiếp học kỳ 2',   'pending',  NULL,                              '2026-11-25 09:00:00', NULL);
 
-INSERT INTO posts (id, title, content, category, image, is_published, author_id, created_at) VALUES
+INSERT INTO posts (id, title, content, category, is_published, author_id, created_at) VALUES
 (1, 'Mở đăng ký KTX học kỳ 2',
     'Ký túc xá nhận đơn đăng ký học kỳ 2 từ 15/11 đến 15/12/2026. Sinh viên đăng nhập và chọn phòng phù hợp.',
-    'notice', NULL, TRUE,  1, '2026-11-15 08:00:00'),
+    'notice', TRUE,  1, '2026-11-15 08:00:00'),
 (2, 'Nội quy ký túc xá',
     'Giờ đóng cửa 23h00. Không nấu ăn trong phòng. Giữ gìn vệ sinh chung. Khách đến thăm phải đăng ký với bảo vệ.',
-    'rule',   NULL, TRUE,  1, '2026-08-01 08:00:00'),
+    'rule',   TRUE,  1, '2026-08-01 08:00:00'),
 (3, 'Lịch cắt điện tòa A ngày 28/11',
     'Tòa A cắt điện từ 8h00 đến 11h00 ngày 28/11/2026 để bảo trì hệ thống.',
-    'news',   NULL, TRUE,  1, '2026-11-25 08:00:00'),
+    'news',   TRUE,  1, '2026-11-25 08:00:00'),
 (4, 'Kế hoạch sửa chữa phòng B102',
     'Bản nháp: dự kiến sửa chữa B102 trong tháng 12/2026.',
-    'news',   NULL, FALSE, 1, '2026-11-26 08:00:00');
+    'news',   FALSE, 1, '2026-11-26 08:00:00');
+
+INSERT INTO feedbacks (id, user_id, content, reply, status, is_published, created_at, replied_at) VALUES
+(1, 2, 'Wifi tầng 2 tòa A yếu vào buổi tối.',
+    'Đã báo kỹ thuật lắp thêm bộ phát, dự kiến xong ngày 05/12.', 'replied', TRUE,  '2026-11-20 20:00:00', '2026-11-21 08:30:00'),
+(2, 3, 'Đề nghị mở cửa muộn hơn vào cuối tuần.',
+    NULL,                                                          'new',     FALSE, '2026-11-26 21:15:00', NULL);
 
 
 -- =====================================================================
@@ -220,3 +243,7 @@ INSERT INTO posts (id, title, content, category, image, is_published, author_id,
 --
 -- Bài viết guest được xem:
 --   SELECT * FROM posts WHERE is_published = TRUE ORDER BY created_at DESC;
+--
+-- Feedback guest được xem:
+--   SELECT f.*, u.full_name FROM feedbacks f JOIN users u ON u.id = f.user_id
+--   WHERE f.is_published = TRUE ORDER BY f.created_at DESC;

@@ -16,12 +16,22 @@ JSP (View)  ──form──►  Servlet (Controller)  ──►  BO (nghiệp v
 | Controller | `controller` | Đọc form, kiểm tra đăng nhập, gọi BO, chọn trang JSP | `SearchServlet.java` |
 | Util | `util` | Hàm dùng chung (escape HTML, băm mật khẩu, đọc số/ngày) | `HtmlUtil.java` |
 
-**Khác biệt so với BTHS4** (vì KTX lớn hơn, 5 bảng thay vì 1):
+**Khác biệt so với BTHS4** (vì KTX lớn hơn, 6 bảng thay vì 1):
 
 1. BO không còn "chuyển tiếp" sang DAO nữa mà là nơi chứa **toàn bộ quy tắc** (phòng còn chỗ không, đúng giới tính không, mỗi sinh viên 1 đơn…). Hàm BO trả về `String`: `null` = thành công, khác `null` = câu thông báo lỗi → Servlet chỉ việc đưa câu đó ra JSP (giống biến `thongbao` của thầy).
 2. Kiểm tra đăng nhập/phân quyền gom vào **1 Filter** (`AuthFilter`) thay vì chép lại ở đầu từng Servlet. Filter vẫn giữ nguyên ý tưởng của thầy: *đọc lại quyền từ CSDL mỗi lần*, không tin session.
 3. Mật khẩu được **băm SHA-256**, không lưu chữ thường.
 4. DAO dùng `try (Connection conn = ...)` để kết nối luôn được đóng, kể cả khi có lỗi (xem mục 3.1 e).
+
+> **Cập nhật 28/11/2026 — CSDL thay đổi, cần viết bổ sung**
+>
+> | Thay đổi trong `dormitory.sql` | Bạn cần làm | Mục |
+> |---|---|---|
+> | Bảng `posts` **bỏ cột `image`** | Đã sửa sẵn `Post.java`, `PostDAO.java` (bỏ field `image`, `insertPost`/`updatePost` còn 5 dấu `?`) | 2, 3.7 |
+> | **Thêm bảng `feedbacks`** (góp ý của sinh viên, admin trả lời, admin bật công khai cho guest xem) | Viết mới `Feedback`, `FeedbackDAO`, `FeedbackBO`, `UserFeedbackServlet`, `AdminFeedbackServlet`, `FeedbackServlet` (guest) | 2, 3.8, 4.7, 6.12–6.14 |
+> | (đi kèm) Dashboard đếm số góp ý mới | Thêm 1 dòng `newFeedbacks` vào `DashboardServlet` | 6.10 |
+>
+> Sau khi import lại `dormitory.sql`, nhớ chạy lại `UPDATE users SET password = SHA2('123456', 256);` (mục 0.1). `build.bat` không cần sửa vì đã biên dịch `*.java` của cả thư mục.
 
 ---
 
@@ -65,14 +75,14 @@ Website_KTX/
 ├── database/dormitory.sql
 ├── src/
 │   ├── util/          HtmlUtil, PasswordUtil, WebUtil
-│   ├── model/bean/    User, Room, Registration, RegistrationRequest, Post
-│   ├── model/dao/     DBConnect, UserDAO, RoomDAO, RegistrationDAO, RequestDAO, PostDAO
-│   ├── model/bo/      UserBO, RoomBO, RegistrationBO, RequestBO, PostBO
+│   ├── model/bean/    User, Room, Registration, RegistrationRequest, Post, Feedback
+│   ├── model/dao/     DBConnect, UserDAO, RoomDAO, RegistrationDAO, RequestDAO, PostDAO, FeedbackDAO
+│   ├── model/bo/      UserBO, RoomBO, RegistrationBO, RequestBO, PostBO, FeedbackBO
 │   └── controller/    EncodingFilter, AuthFilter, *Servlet
 └── WebContent/
-    ├── guest/         index.jsp, post.jsp, rooms.jsp, login.jsp, signup.jsp
-    ├── user/          rooms.jsp, my-registration.jsp
-    ├── admin/         dashboard.jsp, rooms.jsp, room-form.jsp, registrations.jsp, requests.jsp, users.jsp, posts.jsp, post-form.jsp
+    ├── guest/         index.jsp, post.jsp, rooms.jsp, login.jsp, signup.jsp, feedback.jsp
+    ├── user/          rooms.jsp, my-registration.jsp, feedback.jsp
+    ├── admin/         dashboard.jsp, rooms.jsp, room-form.jsp, registrations.jsp, requests.jsp, users.jsp, posts.jsp, post-form.jsp, feedbacks.jsp
     ├── account/       profile.jsp   (tạo thêm thư mục này: trang dùng chung cho user và admin)
     ├── layouts/       header.jsp, footer.jsp
     ├── assets/        css, js, images
@@ -425,7 +435,6 @@ public class Post {
     private String title;
     private String content;
     private String category;       // news | notice | rule
-    private String image;          // ten file anh, co the null
     private boolean published;     // false = guest khong thay
     private int authorId;
     private LocalDateTime createdAt;
@@ -439,8 +448,6 @@ public class Post {
     public void setContent(String content) { this.content = content; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
-    public String getImage() { return image; }
-    public void setImage(String image) { this.image = image; }
     public boolean isPublished() { return published; }
     public void setPublished(boolean published) { this.published = published; }
     public int getAuthorId() { return authorId; }
@@ -449,6 +456,63 @@ public class Post {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public String getAuthorName() { return authorName; }
     public void setAuthorName(String authorName) { this.authorName = authorName; }
+}
+```
+
+### `src/model/bean/Feedback.java`
+
+Bảng mới `feedbacks`. Cột `is_published` đặt tên giống bảng `posts` nên field cũng tên `published` → getter `isPublished()`, JSP dùng giống hệt bài viết.
+
+| Cột SQL | Field Java | Ghi chú |
+|---|---|---|
+| `user_id` | `int userId` | sinh viên gửi |
+| `content` | `String content` | |
+| `reply` | `String reply` | admin trả lời, `NULL` khi chưa trả lời |
+| `status` | `String status` | `new` \| `replied` |
+| `is_published` | `boolean published` | `true` = guest thấy |
+| `created_at`, `replied_at` | `LocalDateTime` | `replied_at` có thể `NULL` |
+| (JOIN `users`) | `String fullName`, `String studentCode` | để JSP in tên người gửi |
+
+```java
+package model.bean;
+
+import java.time.LocalDateTime;
+
+public class Feedback {
+    private int id;
+    private int userId;
+    private String content;
+    private String reply;              // admin tra loi, co the null
+    private String status;             // new | replied
+    private boolean published;         // cot is_published: true = guest thay
+    private LocalDateTime createdAt;
+    private LocalDateTime repliedAt;   // co the null
+    private String fullName;           // lay tu JOIN users
+    private String studentCode;        // lay tu JOIN users
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getUserId() { return userId; }
+    public void setUserId(int userId) { this.userId = userId; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public String getReply() { return reply; }
+    public void setReply(String reply) { this.reply = reply; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public boolean isPublished() { return published; }
+    public void setPublished(boolean published) { this.published = published; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getRepliedAt() { return repliedAt; }
+    public void setRepliedAt(LocalDateTime repliedAt) { this.repliedAt = repliedAt; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public String getStudentCode() { return studentCode; }
+    public void setStudentCode(String studentCode) { this.studentCode = studentCode; }
+
+    // tien cho JSP / BO: da duoc admin tra loi chua
+    public boolean isReplied() { return "replied".equals(status); }
 }
 ```
 
@@ -1093,7 +1157,6 @@ public class PostDAO {
         p.setTitle(rs.getString("title"));
         p.setContent(rs.getString("content"));
         p.setCategory(rs.getString("category"));
-        p.setImage(rs.getString("image"));
         p.setPublished(rs.getBoolean("is_published"));
         p.setAuthorId(rs.getInt("author_id"));
         p.setCreatedAt(DBConnect.getDateTime(rs, "created_at"));
@@ -1131,14 +1194,14 @@ public class PostDAO {
     }
 
     public boolean insertPost(Post p) {
-        return DBConnect.executeUpdate("insert into posts (title, content, category, image, is_published, author_id)"
-            + " values (?, ?, ?, ?, ?, ?)", p.getTitle(), p.getContent(), p.getCategory(), p.getImage(),
+        return DBConnect.executeUpdate("insert into posts (title, content, category, is_published, author_id)"
+            + " values (?, ?, ?, ?, ?)", p.getTitle(), p.getContent(), p.getCategory(),
             p.isPublished(), p.getAuthorId()) == 1;
     }
 
     public boolean updatePost(Post p) {
-        return DBConnect.executeUpdate("update posts set title=?, content=?, category=?, image=?, is_published=?"
-            + " where id=?", p.getTitle(), p.getContent(), p.getCategory(), p.getImage(),
+        return DBConnect.executeUpdate("update posts set title=?, content=?, category=?, is_published=?"
+            + " where id=?", p.getTitle(), p.getContent(), p.getCategory(),
             p.isPublished(), p.getId()) == 1;
     }
 
@@ -1151,6 +1214,99 @@ public class PostDAO {
     }
 }
 ```
+
+### 3.8. `src/model/dao/FeedbackDAO.java`
+
+Viết y như `PostDAO`: 1 hằng `SELECT_...` có JOIN, `mapFeedback`, `query`, rồi các hàm đọc/ghi. Điểm mới duy nhất là hàm `reply` cập nhật **3 cột cùng lúc** (`reply`, `status`, `replied_at`) — `now()` là hàm của MySQL trả về giờ hiện tại.
+
+```java
+package model.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import model.bean.Feedback;
+
+public class FeedbackDAO {
+    private static final String SELECT_FEEDBACK =
+        "select f.*, u.full_name, u.student_code from feedbacks f join users u on u.id = f.user_id ";
+
+    private Feedback mapFeedback(ResultSet rs) throws SQLException {
+        Feedback f = new Feedback();
+        f.setId(rs.getInt("id"));
+        f.setUserId(rs.getInt("user_id"));
+        f.setContent(rs.getString("content"));
+        f.setReply(rs.getString("reply"));
+        f.setStatus(rs.getString("status"));
+        f.setPublished(rs.getBoolean("is_published"));
+        f.setCreatedAt(DBConnect.getDateTime(rs, "created_at"));
+        f.setRepliedAt(DBConnect.getDateTime(rs, "replied_at"));
+        f.setFullName(rs.getString("full_name"));
+        f.setStudentCode(rs.getString("student_code"));
+        return f;
+    }
+
+    private ArrayList<Feedback> query(String sql, Object... params) {
+        ArrayList<Feedback> result = new ArrayList<Feedback>();
+        try (Connection conn = DBConnect.getConnection()) {
+            PreparedStatement pst = conn.prepareStatement(sql);
+            DBConnect.setParams(pst, params);
+            ResultSet rs = pst.executeQuery();
+            while (rs.next()) result.add(mapFeedback(rs));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    // guest: chi gop y da cong khai, moi tra loi len dau
+    public ArrayList<Feedback> getPublishedFeedbacks() {
+        return query(SELECT_FEEDBACK + "where f.is_published = true order by f.replied_at desc");
+    }
+
+    // sinh vien: gop y cua chinh minh
+    public ArrayList<Feedback> getFeedbacksByUser(int userId) {
+        return query(SELECT_FEEDBACK + "where f.user_id=? order by f.created_at desc", userId);
+    }
+
+    // admin: loc theo trang thai; status rong = tat ca
+    public ArrayList<Feedback> getFeedbackList(String status) {
+        return query(SELECT_FEEDBACK + "where (?='' or f.status=?) order by f.created_at desc", status, status);
+    }
+
+    public Feedback getFeedbackById(int id) {
+        ArrayList<Feedback> list = query(SELECT_FEEDBACK + "where f.id=?", id);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    public boolean insertFeedback(Feedback f) {
+        return DBConnect.executeUpdate("insert into feedbacks (user_id, content) values (?, ?)",
+                f.getUserId(), f.getContent()) == 1;
+    }
+
+    // tra loi = luu cau tra loi + doi trang thai + ghi gio tra loi
+    public boolean reply(int id, String reply) {
+        return DBConnect.executeUpdate("update feedbacks set reply=?, status='replied', replied_at=now() where id=?",
+                reply, id) == 1;
+    }
+
+    public boolean updatePublished(int id, boolean published) {
+        return DBConnect.executeUpdate("update feedbacks set is_published=? where id=?", published, id) == 1;
+    }
+
+    public boolean deleteFeedback(int id) {
+        return DBConnect.executeUpdate("delete from feedbacks where id=?", id) == 1;
+    }
+
+    public int countByStatus(String status) {
+        return DBConnect.count("select count(*) from feedbacks where status=?", status);
+    }
+}
+```
+
+> Các cột `status`, `is_published`, `created_at` không cần ghi trong câu `insert` vì đã có `DEFAULT` trong `CREATE TABLE` (`'new'`, `FALSE`, giờ hiện tại).
 
 ---
 
@@ -1174,6 +1330,7 @@ Lấy từ chú thích trong `dormitory.sql`, cộng thêm những điều hiể
 | R7 | Phòng | Số phòng không trùng; sức chứa 1–20; giá ≥ 0; sức chứa mới ≥ số người đang ở; phòng đang có người thì không đổi nam/nữ; phòng đã có đơn thì **không xóa** (chỉ đóng) | `RoomBO` |
 | R8 | Tài khoản | Username/email/MSSV không trùng; mật khẩu ≥ 6 ký tự; không đổi giới tính khi đang có đơn; admin không tự xóa / tự hạ quyền mình; không xóa user đã có đơn hoặc đã viết bài | `UserBO` |
 | R9 | Bài viết | Guest chỉ xem bài `is_published = true` | `PostBO` |
+| R10 | Góp ý | Chỉ sinh viên gửi; nội dung 1–1000 ký tự. SV chỉ xóa góp ý **của mình** khi **chưa được trả lời**. Admin trả lời phải có nội dung (trả lời lại thì ghi đè). **Chỉ công khai góp ý đã trả lời**; guest chỉ thấy góp ý `is_published = true`. Xóa sinh viên thì góp ý tự xóa theo (`ON DELETE CASCADE`), nên `UserBO.deleteUser` không cần chặn | `FeedbackBO` |
 
 > Vì sao kiểm tra ở BO mà không chỉ dựa vào CSDL? CSDL có `CHECK`, `UNIQUE`, khóa ngoại, nhưng khi vi phạm thì chỉ ném `SQLException` khó hiểu. BO kiểm tra trước để trả về câu thông báo tiếng Việt rõ ràng; ràng buộc của CSDL là lớp bảo vệ cuối cùng.
 
@@ -1587,6 +1744,72 @@ public class PostBO {
 }
 ```
 
+### 4.7. `src/model/bo/FeedbackBO.java`
+
+Cùng khuôn với các BO khác: hàm đọc chỉ chuyển sang DAO, hàm ghi kiểm tra quy tắc R10 rồi trả về `null` (thành công) hoặc câu báo lỗi. Chuỗi nhận vào đã được Servlet `WebUtil.trim(...)` nên ở đây chỉ cần `isEmpty()`.
+
+```java
+package model.bo;
+
+import java.util.ArrayList;
+import model.bean.Feedback;
+import model.bean.User;
+import model.dao.FeedbackDAO;
+
+public class FeedbackBO {
+    public static final int MAX_LENGTH = 1000;
+    FeedbackDAO feedbackDAO = new FeedbackDAO();
+
+    public ArrayList<Feedback> getPublishedFeedbacks() { return feedbackDAO.getPublishedFeedbacks(); }
+    public ArrayList<Feedback> getFeedbacksByUser(int userId) { return feedbackDAO.getFeedbacksByUser(userId); }
+    public ArrayList<Feedback> getFeedbackList(String status) { return feedbackDAO.getFeedbackList(status); }
+    public int countNew() { return feedbackDAO.countByStatus("new"); }
+
+    // sinh vien gui gop y
+    public String send(User user, String content) {
+        if (user.isAdmin()) return "Admin không gửi góp ý!";
+        if (content.isEmpty()) return "Vui lòng nhập nội dung góp ý!";
+        if (content.length() > MAX_LENGTH) return "Góp ý tối đa " + MAX_LENGTH + " ký tự!";
+        Feedback f = new Feedback();
+        f.setUserId(user.getId());
+        f.setContent(content);
+        return feedbackDAO.insertFeedback(f) ? null : "Gửi góp ý thất bại!";
+    }
+
+    // sinh vien xoa gop y cua minh, chi khi admin chua tra loi
+    public String deleteByUser(User user, int id) {
+        Feedback f = feedbackDAO.getFeedbackById(id);
+        if (f == null || f.getUserId() != user.getId()) return "Không tìm thấy góp ý!";
+        if (f.isReplied()) return "Góp ý đã được trả lời, không thể xóa!";
+        return feedbackDAO.deleteFeedback(id) ? null : "Xóa góp ý thất bại!";
+    }
+
+    // admin tra loi (tra loi lai thi ghi de cau cu)
+    public String reply(int id, String reply) {
+        if (feedbackDAO.getFeedbackById(id) == null) return "Không tìm thấy góp ý!";
+        if (reply.isEmpty()) return "Vui lòng nhập nội dung trả lời!";
+        if (reply.length() > MAX_LENGTH) return "Trả lời tối đa " + MAX_LENGTH + " ký tự!";
+        return feedbackDAO.reply(id, reply) ? null : "Trả lời thất bại!";
+    }
+
+    // admin bat / tat hien thi cho guest
+    public String setPublished(int id, boolean published) {
+        Feedback f = feedbackDAO.getFeedbackById(id);
+        if (f == null) return "Không tìm thấy góp ý!";
+        if (published && !f.isReplied()) return "Chỉ công khai được góp ý đã trả lời!";
+        return feedbackDAO.updatePublished(id, published) ? null : "Cập nhật thất bại!";
+    }
+
+    // admin xoa (vd gop y spam)
+    public String deleteFeedback(int id) {
+        if (feedbackDAO.getFeedbackById(id) == null) return "Không tìm thấy góp ý!";
+        return feedbackDAO.deleteFeedback(id) ? null : "Xóa góp ý thất bại!";
+    }
+}
+```
+
+> Vì sao `deleteByUser` kiểm tra `f.getUserId() != user.getId()`? Nếu không, sinh viên A sửa `id` trong form (F12) là xóa được góp ý của sinh viên B. Báo chung "Không tìm thấy" để không lộ là góp ý đó có tồn tại.
+
 ---
 
 ## Bước 5 — Filter (thay cho đoạn "chưa đăng nhập thì về login" ở đầu mỗi Servlet)
@@ -1733,8 +1956,11 @@ User user = (User) request.getAttribute("currentUser");
 | `/admin/RequestServlet` | `AdminRequestServlet` | Danh sách yêu cầu, lọc `status` | `approve`, `reject` | `/admin/requests.jsp` |
 | `/admin/UserServlet` | `AdminUserServlet` | Tìm tài khoản `keyword` | `role`, `delete` | `/admin/users.jsp` |
 | `/admin/PostServlet` | `AdminPostServlet` | Danh sách / form `add`, `edit` | `save`, `delete` | `/admin/posts.jsp`, `/admin/post-form.jsp` |
+| `/FeedbackServlet` | `FeedbackServlet` | Góp ý đã công khai (kèm trả lời) | – | `/guest/feedback.jsp` |
+| `/user/FeedbackServlet` | `UserFeedbackServlet` | Góp ý của tôi + form gửi | `send`, `delete` | `/user/feedback.jsp` |
+| `/admin/FeedbackServlet` | `AdminFeedbackServlet` | Danh sách góp ý, lọc `status` (mặc định `new`) | `reply`, `publish`, `hide`, `delete` | `/admin/feedbacks.jsp` |
 
-Dưới đây là code đầy đủ của các Servlet tiêu biểu; những Servlet còn lại viết theo đúng khuôn của Servlet cùng loại (ghi trong cột cuối của bảng ở mục 6.12).
+Dưới đây là code đầy đủ của các Servlet tiêu biểu; những Servlet còn lại viết theo đúng khuôn của Servlet cùng loại (ghi trong cột cuối của bảng ở mục 6.14).
 
 ### 6.3. `src/controller/LoginServlet.java`
 
@@ -2127,6 +2353,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.bean.Room;
+import model.bo.FeedbackBO;
 import model.bo.RegistrationBO;
 import model.bo.RequestBO;
 import model.bo.RoomBO;
@@ -2148,6 +2375,7 @@ public class DashboardServlet extends HttpServlet {
         request.setAttribute("occupied", occupied);
         request.setAttribute("pendingRegistrations", new RegistrationBO().countByStatus("pending"));
         request.setAttribute("pendingRequests", new RequestBO().countByStatus("pending"));
+        request.setAttribute("newFeedbacks", new FeedbackBO().countNew());
         request.getRequestDispatcher("/admin/dashboard.jsp").forward(request, response);
     }
 }
@@ -2181,7 +2409,117 @@ public class HomeServlet extends HttpServlet {
 }
 ```
 
-### 6.12. Các Servlet còn lại — tự viết theo khuôn
+### 6.12. `src/controller/UserFeedbackServlet.java` — sinh viên gửi / xem góp ý
+
+Khác `UserRegistrationServlet` ở 1 chỗ: gửi góp ý **lỗi** thì không redirect mà **gọi lại `doGet`** kèm nội dung vừa gõ, để sinh viên không phải gõ lại cả đoạn (đúng ý "nhập sai → forward lại form" ở mục 6.1).
+
+```java
+package controller;
+
+import java.io.IOException;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import model.bean.User;
+import model.bo.FeedbackBO;
+import util.WebUtil;
+
+@WebServlet("/user/FeedbackServlet")
+public class UserFeedbackServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        User user = (User) request.getAttribute("currentUser");
+        request.setAttribute("feedbackList", new FeedbackBO().getFeedbacksByUser(user.getId()));
+        request.getRequestDispatcher("/user/feedback.jsp").forward(request, response);
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        User user = (User) request.getAttribute("currentUser");
+        FeedbackBO feedbackBO = new FeedbackBO();
+        String action = WebUtil.trim(request.getParameter("action"));
+
+        if (action.equals("send")) {
+            String content = WebUtil.trim(request.getParameter("content"));
+            String loi = feedbackBO.send(user, content);
+            if (loi == null) {
+                WebUtil.redirect(request, response, "/user/FeedbackServlet", "ok", "Đã gửi góp ý, cảm ơn bạn!");
+            } else {
+                request.setAttribute("thongbao", loi);
+                request.setAttribute("content", content);     // giu lai noi dung vua go
+                doGet(request, response);
+            }
+            return;
+        }
+
+        String loi;
+        if (action.equals("delete")) loi = feedbackBO.deleteByUser(user, WebUtil.toInt(request.getParameter("id")));
+        else loi = "Thao tác không hợp lệ!";
+
+        if (loi == null) WebUtil.redirect(request, response, "/user/FeedbackServlet", "ok", "Đã xóa góp ý!");
+        else WebUtil.redirect(request, response, "/user/FeedbackServlet", "loi", loi);
+    }
+}
+```
+
+### 6.13. `src/controller/AdminFeedbackServlet.java` — admin trả lời, công khai, xóa
+
+Giống hệt `AdminRequestServlet` (mục 6.8): đọc `action` + `id`, gọi BO, redirect về đúng bộ lọc `status` đang xem.
+
+```java
+package controller;
+
+import java.io.IOException;
+import java.net.URLEncoder;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import model.bo.FeedbackBO;
+import util.WebUtil;
+
+@WebServlet("/admin/FeedbackServlet")
+public class AdminFeedbackServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String status = request.getParameter("status");
+        if (status == null) status = "new";                    // "" = tat ca
+        request.setAttribute("status", status);
+        request.setAttribute("feedbackList", new FeedbackBO().getFeedbackList(status));
+        request.getRequestDispatcher("/admin/feedbacks.jsp").forward(request, response);
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        FeedbackBO feedbackBO = new FeedbackBO();
+        String action = WebUtil.trim(request.getParameter("action"));
+        int id = WebUtil.toInt(request.getParameter("id"));
+        String back = "/admin/FeedbackServlet?status="
+                    + URLEncoder.encode(WebUtil.trim(request.getParameter("status")), "UTF-8");
+
+        String loi;
+        if (action.equals("reply")) loi = feedbackBO.reply(id, WebUtil.trim(request.getParameter("reply")));
+        else if (action.equals("publish")) loi = feedbackBO.setPublished(id, true);
+        else if (action.equals("hide")) loi = feedbackBO.setPublished(id, false);
+        else if (action.equals("delete")) loi = feedbackBO.deleteFeedback(id);
+        else loi = "Thao tác không hợp lệ!";
+
+        if (loi == null) WebUtil.redirect(request, response, back, "ok", "Đã xử lý góp ý #" + id);
+        else WebUtil.redirect(request, response, back, "loi", loi);
+    }
+}
+```
+
+> Trả lời xong góp ý đang lọc `status=new` sẽ biến khỏi danh sách (vì đã thành `replied`) — đúng ý "hộp thư cần xử lý". Muốn bấm "Công khai" ngay sau khi trả lời thì chọn bộ lọc *Đã trả lời* hoặc *Tất cả*.
+
+### 6.14. Các Servlet còn lại — tự viết theo khuôn
 
 | Servlet | Viết giống | Ghi chú |
 |---|---|---|
@@ -2191,8 +2529,7 @@ public class HomeServlet extends HttpServlet {
 | `ProfileServlet` (`/account/ProfileServlet`) | `UserRegistrationServlet` | GET: `currentUser` → JSP. POST `action=save` → `UserBO.updateProfile(currentUser, formUser)`; `action=password` → `UserBO.changePassword(...)`. Nhớ cập nhật `session.fullName` sau khi đổi tên |
 | `AdminUserServlet` | `AdminRequestServlet` | GET: `UserBO.getUserList(keyword)`. POST `action=role` → `changeRole(currentUser, id, role)`; `action=delete` → `deleteUser(currentUser, id)` |
 | `AdminPostServlet` | `AdminRoomServlet` | Gom form vào `Post`; `authorId` = `currentUser.getId()` khi thêm mới; checkbox `published`: `"on".equals(request.getParameter("published"))` |
-
-> **Upload ảnh bài viết** (không bắt buộc): thêm `@MultipartConfig` lên `AdminPostServlet`, form dùng `enctype="multipart/form-data"`, đọc file bằng `request.getPart("image")`, lưu vào `getServletContext().getRealPath("/assets/images/uploads")` với tên mới (vd `System.currentTimeMillis() + ".jpg"`), chỉ nhận đuôi `.jpg/.png/.webp`. Thư mục `uploads/` đã được `.gitignore`.
+| `FeedbackServlet` (guest, `/FeedbackServlet`) | `HomeServlet` | `request.setAttribute("feedbackList", new FeedbackBO().getPublishedFeedbacks())` → `/guest/feedback.jsp`. Không nằm trong `/user/*` nên không qua `AuthFilter` — khách chưa đăng nhập vẫn xem được |
 
 ---
 
@@ -2209,7 +2546,10 @@ Phần backend xong khi mỗi JSP biết **nhận gì** và **gửi gì**. Bản
 | `admin/requests.jsp` | `status`, `requestList` | `action=approve|reject`, `id`, `status`, `adminNote` |
 | `admin/rooms.jsp` | `roomList` | `action=delete`, `id` |
 | `admin/room-form.jsp` | `room`, `thongbao` | `action=save`, `id` (hidden), `roomNumber`, `building`, `genderType`, `capacity`, `price`, `status`, `description` |
-| `admin/dashboard.jsp` | `roomCount`, `totalBeds`, `occupied`, `pendingRegistrations`, `pendingRequests` | – |
+| `admin/dashboard.jsp` | `roomCount`, `totalBeds`, `occupied`, `pendingRegistrations`, `pendingRequests`, `newFeedbacks` | – |
+| `user/feedback.jsp` | `feedbackList` (`ArrayList<Feedback>`), `thongbao`, `content` (nội dung vừa gõ khi gửi lỗi) | `action=send`, `content` (`<textarea>`) · hoặc `action=delete`, `id` (chỉ hiện nút khi `!f.isReplied()`) → POST `/user/FeedbackServlet` |
+| `admin/feedbacks.jsp` | `status`, `feedbackList` | `action=reply`, `id`, `status`, `reply` · `action=publish|hide|delete`, `id`, `status` → POST `/admin/FeedbackServlet` |
+| `guest/feedback.jsp` | `feedbackList` (chỉ góp ý đã công khai) | – |
 
 Mọi trang đọc thông báo sau redirect giống `search.jsp` của thầy:
 
@@ -2257,6 +2597,13 @@ Kiểm thử theo dữ liệu demo (mật khẩu đều là `123456`, mốc "hô
 | `admin` | (sau khi duyệt đơn Hùng, A101 có 2 người) Sửa A101 sức chứa = 1 | "Sức chứa không được nhỏ hơn số người đang ở (2)!" |
 | `admin` | Xóa tài khoản chính mình | "Không thể xóa tài khoản của chính mình!" |
 | guest | `/PostServlet?id=4` (bài nháp) | Không xem được |
+| `sv002` (Bình) | `/user/FeedbackServlet` → gửi góp ý để trống | "Vui lòng nhập nội dung góp ý!" |
+| `sv001` (An) | `/user/FeedbackServlet` | Thấy góp ý #1 kèm câu trả lời của admin, **không** có nút xóa |
+| `sv001` | Sửa form (F12) xóa góp ý `id=2` của Bình | "Không tìm thấy góp ý!" |
+| `admin` | Công khai góp ý #2 (chưa trả lời) | "Chỉ công khai được góp ý đã trả lời!" |
+| `admin` | Trả lời #2 rồi công khai | `status = replied`, `replied_at` có giờ; guest thấy cả #1 và #2 |
+| guest | `/FeedbackServlet` (lúc mới import) | Chỉ thấy góp ý #1 |
+| guest | `/user/FeedbackServlet` | Bị đẩy về trang đăng nhập |
 
 ---
 
