@@ -4,7 +4,7 @@
 --  Gồm 6 bảng: users, rooms, registrations, registration_requests, posts, feedbacks
 --  + 1 view: v_room_occupancy (số người đang ở / chỗ trống của mỗi phòng)
 --
---  Tài khoản demo: mật khẩu tất cả là 123456
+--  Tài khoản demo: mật khẩu tất cả là 123456 (lưu dạng SHA-256, Java đăng nhập được ngay)
 --    admin  | sv001 (An) | sv002 (Bình) | sv003 (Cường) | sv004 (Dung) | sv005 (Hùng)
 --  Dữ liệu demo lấy mốc "hôm nay" = 27/11/2026
 -- =====================================================================
@@ -19,10 +19,11 @@ USE dormitory;
 CREATE TABLE users (
     id            INT AUTO_INCREMENT PRIMARY KEY,
     username      VARCHAR(50)  NOT NULL UNIQUE,
-    password      VARCHAR(255) NOT NULL,                       -- password_hash()
+    password      VARCHAR(255) NOT NULL,                       -- SHA-256 (hex), xem PasswordUtil
     full_name     VARCHAR(100) NOT NULL,
     email         VARCHAR(100) NOT NULL UNIQUE,
     phone         VARCHAR(15),
+    address       VARCHAR(255) NULL,                           -- địa chỉ thường trú
     gender        ENUM('male','female') NULL,                  -- admin có thể để trống
     student_code  VARCHAR(20)  NULL UNIQUE,                    -- MSSV, admin để trống
     role          ENUM('user','admin') NOT NULL DEFAULT 'user',
@@ -106,13 +107,15 @@ CREATE TABLE registration_requests (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
--- 5. POSTS: nội dung công khai (tin tức, thông báo, nội quy)
+-- 5. POSTS: nội dung công khai (tin tức, thông báo, nội quy, biểu mẫu)
+--    category = 'form': biểu mẫu cho tải về, file nằm ở file_url
 -- ---------------------------------------------------------------------
 CREATE TABLE posts (
     id            INT AUTO_INCREMENT PRIMARY KEY,
     title         VARCHAR(200) NOT NULL,
     content       TEXT NOT NULL,
-    category      ENUM('news','notice','rule') NOT NULL DEFAULT 'news',
+    category      ENUM('news','notice','rule','form') NOT NULL DEFAULT 'news',
+    file_url      VARCHAR(255) NULL,                           -- file đính kèm, vd uploads/forms/1732700000000.pdf
     is_published  BOOLEAN NOT NULL DEFAULT FALSE,              -- false = guest không thấy
     author_id     INT NOT NULL,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -167,13 +170,13 @@ GROUP BY r.id, r.room_number, r.building, r.gender_type, r.capacity, r.price, r.
 -- =====================================================================
 
 -- mật khẩu: 123456
-INSERT INTO users (id, username, password, full_name, email, phone, gender, student_code, role, created_at) VALUES
-(1, 'admin', '$2y$10$96dUQRqOoHyq80.JSCjpF.e4gOpFia4B9G/.nM91qlGHDoYfzG7de', 'Quản trị viên',  'admin@ktx.edu.vn',   '0900000000', NULL,     NULL,         'admin', '2026-01-01 08:00:00'),
-(2, 'sv001', '$2y$10$96dUQRqOoHyq80.JSCjpF.e4gOpFia4B9G/.nM91qlGHDoYfzG7de', 'Nguyễn Văn An',  'an.nv@sv.edu.vn',    '0901000001', 'male',   '2251010001', 'user',  '2026-02-10 09:00:00'),
-(3, 'sv002', '$2y$10$96dUQRqOoHyq80.JSCjpF.e4gOpFia4B9G/.nM91qlGHDoYfzG7de', 'Trần Thị Bình',  'binh.tt@sv.edu.vn',  '0901000002', 'female', '2251010002', 'user',  '2026-02-11 09:00:00'),
-(4, 'sv003', '$2y$10$96dUQRqOoHyq80.JSCjpF.e4gOpFia4B9G/.nM91qlGHDoYfzG7de', 'Lê Văn Cường',   'cuong.lv@sv.edu.vn', '0901000003', 'male',   '2251010003', 'user',  '2026-02-12 09:00:00'),
-(5, 'sv004', '$2y$10$96dUQRqOoHyq80.JSCjpF.e4gOpFia4B9G/.nM91qlGHDoYfzG7de', 'Phạm Thị Dung',  'dung.pt@sv.edu.vn',  '0901000004', 'female', '2251010004', 'user',  '2026-02-13 09:00:00'),
-(6, 'sv005', '$2y$10$96dUQRqOoHyq80.JSCjpF.e4gOpFia4B9G/.nM91qlGHDoYfzG7de', 'Đỗ Quang Hùng',  'hung.dq@sv.edu.vn',  '0901000005', 'male',   '2251010005', 'user',  '2026-11-20 09:00:00');
+INSERT INTO users (id, username, password, full_name, email, phone, address, gender, student_code, role, created_at) VALUES
+(1, 'admin', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'Quản trị viên',  'admin@ktx.edu.vn',   '0900000000', NULL, NULL,     NULL,         'admin', '2026-01-01 08:00:00'),
+(2, 'sv001', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'Nguyễn Văn An',  'an.nv@sv.edu.vn',    '0901000001', 'Thanh Khê, Đà Nẵng', 'male',   '2251010001', 'user',  '2026-02-10 09:00:00'),
+(3, 'sv002', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'Trần Thị Bình',  'binh.tt@sv.edu.vn',  '0901000002', 'Tam Kỳ, Quảng Nam', 'female', '2251010002', 'user',  '2026-02-11 09:00:00'),
+(4, 'sv003', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'Lê Văn Cường',   'cuong.lv@sv.edu.vn', '0901000003', 'Quảng Ngãi', 'male',   '2251010003', 'user',  '2026-02-12 09:00:00'),
+(5, 'sv004', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'Phạm Thị Dung',  'dung.pt@sv.edu.vn',  '0901000004', 'Huế', 'female', '2251010004', 'user',  '2026-02-13 09:00:00'),
+(6, 'sv005', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'Đỗ Quang Hùng',  'hung.dq@sv.edu.vn',  '0901000005', 'Đồng Hới, Quảng Bình', 'male',   '2251010005', 'user',  '2026-11-20 09:00:00');
 
 INSERT INTO rooms (id, room_number, building, gender_type, capacity, price, status, description) VALUES
 (1, 'A101', 'Tòa A', 'male',   4, 500000, 'open',   'Phòng 4 người, điều hòa, WC riêng'),
@@ -203,19 +206,25 @@ INSERT INTO registration_requests (id, registration_id, type, requested_date, re
 (3, 2, 'checkout', '2026-12-10', 'Về quê thực tập',        'approved', 'Đồng ý, bàn giao ngày 09/12',    '2026-11-20 09:00:00', '2026-11-21 09:00:00'),
 (4, 1, 'extend',   '2027-06-30', 'Muốn ở tiếp học kỳ 2',   'pending',  NULL,                              '2026-11-25 09:00:00', NULL);
 
-INSERT INTO posts (id, title, content, category, is_published, author_id, created_at) VALUES
+INSERT INTO posts (id, title, content, category, file_url, is_published, author_id, created_at) VALUES
 (1, 'Mở đăng ký KTX học kỳ 2',
     'Ký túc xá nhận đơn đăng ký học kỳ 2 từ 15/11 đến 15/12/2026. Sinh viên đăng nhập và chọn phòng phù hợp.',
-    'notice', TRUE,  1, '2026-11-15 08:00:00'),
+    'notice', NULL, TRUE,  1, '2026-11-15 08:00:00'),
 (2, 'Nội quy ký túc xá',
     'Giờ đóng cửa 23h00. Không nấu ăn trong phòng. Giữ gìn vệ sinh chung. Khách đến thăm phải đăng ký với bảo vệ.',
-    'rule',   TRUE,  1, '2026-08-01 08:00:00'),
+    'rule',   NULL, TRUE,  1, '2026-08-01 08:00:00'),
 (3, 'Lịch cắt điện tòa A ngày 28/11',
     'Tòa A cắt điện từ 8h00 đến 11h00 ngày 28/11/2026 để bảo trì hệ thống.',
-    'news',   TRUE,  1, '2026-11-25 08:00:00'),
+    'news',   NULL, TRUE,  1, '2026-11-25 08:00:00'),
 (4, 'Kế hoạch sửa chữa phòng B102',
     'Bản nháp: dự kiến sửa chữa B102 trong tháng 12/2026.',
-    'news',   FALSE, 1, '2026-11-26 08:00:00');
+    'news',   NULL, FALSE, 1, '2026-11-26 08:00:00'),
+(5, 'Mẫu đơn xin ở ký túc xá',
+    'Dùng khi không đăng ký trực tuyến được: tải về, điền thông tin và nộp tại văn phòng KTX.',
+    'form',   'assets/forms/don-xin-o-ktx.docx', TRUE, 1, '2026-11-10 08:00:00'),
+(6, 'Mẫu đơn xin trả phòng',
+    'Nộp kèm khi trả phòng trước hạn, có chữ ký xác nhận bàn giao tài sản của trưởng phòng.',
+    'form',   'assets/forms/don-tra-phong.docx', TRUE, 1, '2026-11-10 08:05:00');
 
 INSERT INTO feedbacks (id, user_id, content, reply, status, is_published, created_at, replied_at) VALUES
 (1, 2, 'Wifi tầng 2 tòa A yếu vào buổi tối.',

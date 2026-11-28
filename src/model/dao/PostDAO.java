@@ -17,6 +17,7 @@ public class PostDAO {
         p.setTitle(rs.getString("title"));
         p.setContent(rs.getString("content"));
         p.setCategory(rs.getString("category"));
+        p.setFileUrl(rs.getString("file_url"));
         p.setPublished(rs.getBoolean("is_published"));
         p.setAuthorId(rs.getInt("author_id"));
         p.setCreatedAt(DBConnect.getDateTime(rs, "created_at"));
@@ -37,13 +38,15 @@ public class PostDAO {
         return result;
     }
 
-    // guest: chi bai da xuat ban; category rong = tat ca
+    // guest: chi bai da xuat ban
+    // category rong = tat ca tin tuc (TRU bieu mau), category = 'form' = trang bieu mau
     public ArrayList<Post> getPublishedPosts(String category) {
-        return query(SELECT_POST + "where p.is_published = true and (?='' or p.category=?)"
+        return query(SELECT_POST + "where p.is_published = true"
+                   + " and ((?='' and p.category<>'form') or p.category=?)"
                    + " order by p.created_at desc", category, category);
     }
 
-    // admin: tat ca, ke ca ban nhap
+    // admin: tat ca, ke ca ban nhap va bieu mau
     public ArrayList<Post> getAllPosts() {
         return query(SELECT_POST + "order by p.created_at desc");
     }
@@ -54,14 +57,14 @@ public class PostDAO {
     }
 
     public boolean insertPost(Post p) {
-        return DBConnect.executeUpdate("insert into posts (title, content, category, is_published, author_id)"
-            + " values (?, ?, ?, ?, ?)", p.getTitle(), p.getContent(), p.getCategory(),
+        return DBConnect.executeUpdate("insert into posts (title, content, category, file_url, is_published, author_id)"
+            + " values (?, ?, ?, ?, ?, ?)", p.getTitle(), p.getContent(), p.getCategory(), p.getFileUrl(),
             p.isPublished(), p.getAuthorId()) == 1;
     }
 
     public boolean updatePost(Post p) {
-        return DBConnect.executeUpdate("update posts set title=?, content=?, category=?, is_published=?"
-            + " where id=?", p.getTitle(), p.getContent(), p.getCategory(),
+        return DBConnect.executeUpdate("update posts set title=?, content=?, category=?, file_url=?, is_published=?"
+            + " where id=?", p.getTitle(), p.getContent(), p.getCategory(), p.getFileUrl(),
             p.isPublished(), p.getId()) == 1;
     }
 

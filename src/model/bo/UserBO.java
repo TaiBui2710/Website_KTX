@@ -31,6 +31,7 @@ public class UserBO {
         if (!u.getEmail().matches("^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+$")) return "Email không hợp lệ!";
         if (userDAO.isExist("email", u.getEmail(), excludeId)) return "Email đã được sử dụng!";
         if (!u.getPhone().isEmpty() && !u.getPhone().matches("0\\d{9,10}")) return "Số điện thoại không hợp lệ!";
+        if (u.getAddress() != null && u.getAddress().length() > 255) return "Địa chỉ tối đa 255 ký tự!";
         if (u.getGender() != null && !u.getGender().equals("male") && !u.getGender().equals("female"))
             return "Giới tính không hợp lệ!";
         return null;

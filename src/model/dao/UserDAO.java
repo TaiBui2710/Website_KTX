@@ -16,6 +16,7 @@ public class UserDAO {
         u.setFullName(rs.getString("full_name"));
         u.setEmail(rs.getString("email"));
         u.setPhone(rs.getString("phone"));
+        u.setAddress(rs.getString("address"));
         u.setGender(rs.getString("gender"));
         u.setStudentCode(rs.getString("student_code"));
         u.setRole(rs.getString("role"));
@@ -65,16 +66,16 @@ public class UserDAO {
     }
 
     public boolean insertUser(User u) {
-        String sql = "insert into users (username, password, full_name, email, phone, gender, student_code, role)"
-                   + " values (?, ?, ?, ?, ?, ?, ?, 'user')";
+        String sql = "insert into users (username, password, full_name, email, phone, address, gender, student_code, role)"
+                   + " values (?, ?, ?, ?, ?, ?, ?, ?, 'user')";
         return DBConnect.executeUpdate(sql, u.getUsername(), u.getPassword(), u.getFullName(),
-                u.getEmail(), u.getPhone(), u.getGender(), u.getStudentCode()) == 1;
+                u.getEmail(), u.getPhone(), u.getAddress(), u.getGender(), u.getStudentCode()) == 1;
     }
 
     public boolean updateProfile(User u) {
-        String sql = "update users set full_name=?, email=?, phone=?, gender=? where id=?";
+        String sql = "update users set full_name=?, email=?, phone=?, address=?, gender=? where id=?";
         return DBConnect.executeUpdate(sql, u.getFullName(), u.getEmail(), u.getPhone(),
-                u.getGender(), u.getId()) == 1;
+                u.getAddress(), u.getGender(), u.getId()) == 1;
     }
 
     public boolean updatePassword(int id, String hashedPassword) {

@@ -7,6 +7,7 @@ public class Post {
     private String title;
     private String content;
     private String category;
+    private String fileUrl;
     private boolean published;
     private int authorId;
     private LocalDateTime createdAt;
@@ -36,6 +37,12 @@ public class Post {
     public void setCategory(String category) {
         this.category = category;
     }
+    public String getFileUrl() {
+        return fileUrl;
+    }
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
+    }
     public boolean isPublished() {
         return published;
     }
@@ -53,6 +60,10 @@ public class Post {
     }
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    // bai thuoc trang Bieu mau
+    public boolean isForm() {
+        return "form".equals(category);
     }
     public String getAuthorName() {
         return authorName;

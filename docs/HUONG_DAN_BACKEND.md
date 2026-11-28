@@ -28,10 +28,13 @@ JSP (View)  ──form──►  Servlet (Controller)  ──►  BO (nghiệp v
 > | Thay đổi trong `dormitory.sql` | Bạn cần làm | Mục |
 > |---|---|---|
 > | Bảng `posts` **bỏ cột `image`** | Đã sửa sẵn `Post.java`, `PostDAO.java` (bỏ field `image`, `insertPost`/`updatePost` còn 5 dấu `?`) | 2, 3.7 |
-> | **Thêm bảng `feedbacks`** (góp ý của sinh viên, admin trả lời, admin bật công khai cho guest xem) | Viết mới `Feedback`, `FeedbackDAO`, `FeedbackBO`, `UserFeedbackServlet`, `AdminFeedbackServlet`, `FeedbackServlet` (guest) | 2, 3.8, 4.7, 6.12–6.14 |
+> | **Thêm bảng `feedbacks`** (góp ý của sinh viên, admin trả lời, admin bật công khai cho guest xem) | Viết mới `Feedback`, `FeedbackDAO`, `FeedbackBO`, `UserFeedbackServlet`, `AdminFeedbackServlet`, `FeedbackServlet` (guest) | 2, 3.8, 4.7, 6.12, 6.13, 6.16 |
 > | (đi kèm) Dashboard đếm số góp ý mới | Thêm 1 dòng `newFeedbacks` vào `DashboardServlet` | 6.10 |
+> | Bảng `users` **thêm cột `address`** (địa chỉ, không bắt buộc) | Sửa `User` (field `address`), `UserDAO` (`mapUser`, `insertUser` 8 dấu `?`, `updateProfile`), `UserBO.checkProfile` (tối đa 255 ký tự). Form đăng ký / hồ sơ thêm ô `address` | 2, 3.3, 4.2, 6.16 |
+> | Bảng `posts` **thêm loại `'form'` và cột `file_url`** (trang Biểu mẫu cho tải về) | Sửa `Post` (`fileUrl`, `isForm()`), `PostDAO` (6 dấu `?`, trang chủ bỏ bài `form`), `PostBO` (kiểm tra file). Viết mới `UploadUtil`, `AdminPostServlet` (có upload), `FormServlet` | 1, 2, 3.7, 4.6, 6.14, 6.15 |
+> | Mật khẩu mẫu lưu sẵn dạng SHA-256 | Import xong đăng nhập `123456` được ngay, **không** cần chạy `UPDATE` nữa | 0.1 |
 >
-> Sau khi import lại `dormitory.sql`, nhớ chạy lại `UPDATE users SET password = SHA2('123456', 256);` (mục 0.1). `build.bat` không cần sửa vì đã biên dịch `*.java` của cả thư mục.
+> `build.bat` không cần sửa vì đã biên dịch `*.java` của cả thư mục. 2 file biểu mẫu mẫu (`.docx`) nằm sẵn ở `WebContent/assets/forms/`.
 
 ---
 
@@ -41,15 +44,14 @@ JSP (View)  ──form──►  Servlet (Controller)  ──►  BO (nghiệp v
 
 1. Bật **MySQL** trong XAMPP Control Panel.
 2. Vào phpMyAdmin → tab *Import* → chọn `database/dormitory.sql` → *Go*.
-3. Dữ liệu demo đang dùng mật khẩu băm kiểu PHP (`$2y$10$...`, bcrypt). Java không có sẵn bcrypt, nên đổi sang SHA-256 (chạy trong tab *SQL*):
+3. Mật khẩu mẫu trong file SQL **đã lưu sẵn dạng SHA-256** (`8d969eef...6c92` chính là SHA-256 của `123456`), import xong là Java đăng nhập được ngay.
 
-```sql
-USE dormitory;
-UPDATE users SET password = SHA2('123456', 256);
-```
-
-> Muốn lần sau import lại không phải chạy câu trên: trong `dormitory.sql` thay chuỗi `$2y$10$96dU...G7de` bằng
-> `8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92` (là SHA-256 của `123456`) và sửa comment `-- password_hash()` thành `-- SHA-256 (hex)`.
+> Nếu bạn đang dùng bản `dormitory.sql` cũ (mật khẩu bắt đầu bằng `$2y$10$`, kiểu bcrypt của PHP) thì chạy thêm trong tab *SQL*:
+>
+> ```sql
+> USE dormitory;
+> UPDATE users SET password = SHA2('123456', 256);
+> ```
 
 ### 0.2. Thư viện
 
@@ -74,18 +76,19 @@ Website_KTX/
 ├── build.bat
 ├── database/dormitory.sql
 ├── src/
-│   ├── util/          HtmlUtil, PasswordUtil, WebUtil
+│   ├── util/          HtmlUtil, PasswordUtil, WebUtil, UploadUtil
 │   ├── model/bean/    User, Room, Registration, RegistrationRequest, Post, Feedback
 │   ├── model/dao/     DBConnect, UserDAO, RoomDAO, RegistrationDAO, RequestDAO, PostDAO, FeedbackDAO
 │   ├── model/bo/      UserBO, RoomBO, RegistrationBO, RequestBO, PostBO, FeedbackBO
 │   └── controller/    EncodingFilter, AuthFilter, *Servlet
 └── WebContent/
-    ├── guest/         index.jsp, post.jsp, rooms.jsp, login.jsp, signup.jsp, feedback.jsp
+    ├── guest/         index.jsp, post.jsp, rooms.jsp, login.jsp, signup.jsp, feedback.jsp, forms.jsp
     ├── user/          rooms.jsp, my-registration.jsp, feedback.jsp
     ├── admin/         dashboard.jsp, rooms.jsp, room-form.jsp, registrations.jsp, requests.jsp, users.jsp, posts.jsp, post-form.jsp, feedbacks.jsp
     ├── account/       profile.jsp   (tạo thêm thư mục này: trang dùng chung cho user và admin)
     ├── layouts/       header.jsp, footer.jsp
-    ├── assets/        css, js, images
+    ├── assets/        css, js, images, forms (2 biểu mẫu mẫu .docx)
+    ├── uploads/forms/ file admin tải lên (tự tạo khi upload, đã có trong .gitignore)
     └── WEB-INF/lib/   mysql-connector-j-8.4.0.jar
 ```
 
@@ -205,6 +208,56 @@ public class WebUtil {
 
 > Vì sao dùng `request.getContextPath() + path`? Servlet admin nằm ở `/admin/...`, servlet user ở `/user/...`. Nếu redirect bằng đường dẫn tương đối như BTHS4 (`"SearchServlet?name="`) thì từ `/admin/X` sang `/user/Y` sẽ bị sai thư mục. Đường dẫn tuyệt đối (`/Website_KTX/user/Y`) luôn đúng.
 
+### `src/util/UploadUtil.java`
+
+Dùng cho trang Biểu mẫu: admin chọn file `.pdf/.doc/.docx` trong form, Servlet nhận được 1 đối tượng `Part` (phần file trong form `multipart/form-data`). Lớp này gom 3 việc: lấy tên file, kiểm tra đuôi, lưu file xuống ổ đĩa.
+
+```java
+package util;
+
+import java.io.File;
+import jakarta.servlet.http.Part;
+
+public class UploadUtil {
+    // ten file nguoi dung chon (khong kem thu muc); khong chon file -> ""
+    public static String getFileName(Part part) {
+        if (part == null || part.getSize() == 0) return "";
+        String name = part.getSubmittedFileName();
+        if (name == null) return "";
+        return new File(name).getName();          // trinh duyet cu gui ca duong dan C:\...\ten.pdf
+    }
+
+    // file co duoi nam trong danh sach khong (khong phan biet hoa thuong)
+    public static boolean hasExtension(String fileName, String... extensions) {
+        String lower = fileName.toLowerCase();
+        for (String ext : extensions) {
+            if (lower.endsWith(ext)) return true;
+        }
+        return false;
+    }
+
+    // luu file vao thu muc folder (duong dan that tren o dia) voi ten moi = so mili-giay + duoi file
+    // (doi ten de 2 file trung ten khong de len nhau, va ten file khong chua ky tu la)
+    // tra ve ten file moi, loi -> null
+    public static String save(Part part, String folder) {
+        try {
+            String name = getFileName(part);
+            String ext = name.substring(name.lastIndexOf('.')).toLowerCase();
+            String newName = System.currentTimeMillis() + ext;
+            File dir = new File(folder);
+            if (!dir.exists()) dir.mkdirs();
+            part.write(new File(dir, newName).getAbsolutePath());
+            return newName;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+}
+```
+
+> Vì sao **không giữ tên gốc** của file? Tên do người dùng đặt có thể trùng với file đã có (bị ghi đè), có dấu cách / tiếng Việt (link dễ lỗi), hoặc cố tình chứa `..\` để ghi ra ngoài thư mục. Đặt lại tên bằng `System.currentTimeMillis()` + đuôi đã kiểm tra là an toàn nhất. Tên gốc không cần lưu vì tiêu đề bài đã mô tả biểu mẫu.
+
 ---
 
 ## Bước 2 — Bean (`model.bean`)
@@ -238,6 +291,7 @@ public class User {
     private String fullName;
     private String email;
     private String phone;
+    private String address;       // dia chi, co the null
     private String gender;        // "male" | "female" | null (admin)
     private String studentCode;   // MSSV, admin = null
     private String role;          // "user" | "admin"
@@ -257,6 +311,8 @@ public class User {
     public void setEmail(String email) { this.email = email; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
     public String getGender() { return gender; }
     public void setGender(String gender) { this.gender = gender; }
     public String getStudentCode() { return studentCode; }
@@ -434,7 +490,8 @@ public class Post {
     private int id;
     private String title;
     private String content;
-    private String category;       // news | notice | rule
+    private String category;       // news | notice | rule | form
+    private String fileUrl;        // file dinh kem (bieu mau), co the null
     private boolean published;     // false = guest khong thay
     private int authorId;
     private LocalDateTime createdAt;
@@ -448,6 +505,8 @@ public class Post {
     public void setContent(String content) { this.content = content; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+    public String getFileUrl() { return fileUrl; }
+    public void setFileUrl(String fileUrl) { this.fileUrl = fileUrl; }
     public boolean isPublished() { return published; }
     public void setPublished(boolean published) { this.published = published; }
     public int getAuthorId() { return authorId; }
@@ -456,6 +515,9 @@ public class Post {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public String getAuthorName() { return authorName; }
     public void setAuthorName(String authorName) { this.authorName = authorName; }
+
+    // bai thuoc trang Bieu mau
+    public boolean isForm() { return "form".equals(category); }
 }
 ```
 
@@ -726,6 +788,7 @@ public class UserDAO {
         u.setFullName(rs.getString("full_name"));
         u.setEmail(rs.getString("email"));
         u.setPhone(rs.getString("phone"));
+        u.setAddress(rs.getString("address"));
         u.setGender(rs.getString("gender"));
         u.setStudentCode(rs.getString("student_code"));
         u.setRole(rs.getString("role"));
@@ -774,17 +837,17 @@ public class UserDAO {
 
     // dang ki: luon la role 'user'
     public boolean insertUser(User u) {
-        String sql = "insert into users (username, password, full_name, email, phone, gender, student_code, role)"
-                   + " values (?, ?, ?, ?, ?, ?, ?, 'user')";
+        String sql = "insert into users (username, password, full_name, email, phone, address, gender, student_code, role)"
+                   + " values (?, ?, ?, ?, ?, ?, ?, ?, 'user')";
         return DBConnect.executeUpdate(sql, u.getUsername(), u.getPassword(), u.getFullName(),
-                u.getEmail(), u.getPhone(), u.getGender(), u.getStudentCode()) == 1;
+                u.getEmail(), u.getPhone(), u.getAddress(), u.getGender(), u.getStudentCode()) == 1;
     }
 
     // tu sua ho so: khong sua username, MSSV, role
     public boolean updateProfile(User u) {
-        String sql = "update users set full_name=?, email=?, phone=?, gender=? where id=?";
+        String sql = "update users set full_name=?, email=?, phone=?, address=?, gender=? where id=?";
         return DBConnect.executeUpdate(sql, u.getFullName(), u.getEmail(), u.getPhone(),
-                u.getGender(), u.getId()) == 1;
+                u.getAddress(), u.getGender(), u.getId()) == 1;
     }
 
     public boolean updatePassword(int id, String hashedPassword) {
@@ -1157,6 +1220,7 @@ public class PostDAO {
         p.setTitle(rs.getString("title"));
         p.setContent(rs.getString("content"));
         p.setCategory(rs.getString("category"));
+        p.setFileUrl(rs.getString("file_url"));
         p.setPublished(rs.getBoolean("is_published"));
         p.setAuthorId(rs.getInt("author_id"));
         p.setCreatedAt(DBConnect.getDateTime(rs, "created_at"));
@@ -1177,13 +1241,15 @@ public class PostDAO {
         return result;
     }
 
-    // guest: chi bai da xuat ban; category rong = tat ca
+    // guest: chi bai da xuat ban
+    // category rong = tat ca tin tuc (TRU bieu mau), category = 'form' = trang bieu mau
     public ArrayList<Post> getPublishedPosts(String category) {
-        return query(SELECT_POST + "where p.is_published = true and (?='' or p.category=?)"
+        return query(SELECT_POST + "where p.is_published = true"
+                   + " and ((?='' and p.category<>'form') or p.category=?)"
                    + " order by p.created_at desc", category, category);
     }
 
-    // admin: tat ca, ke ca ban nhap
+    // admin: tat ca, ke ca ban nhap va bieu mau
     public ArrayList<Post> getAllPosts() {
         return query(SELECT_POST + "order by p.created_at desc");
     }
@@ -1194,14 +1260,14 @@ public class PostDAO {
     }
 
     public boolean insertPost(Post p) {
-        return DBConnect.executeUpdate("insert into posts (title, content, category, is_published, author_id)"
-            + " values (?, ?, ?, ?, ?)", p.getTitle(), p.getContent(), p.getCategory(),
+        return DBConnect.executeUpdate("insert into posts (title, content, category, file_url, is_published, author_id)"
+            + " values (?, ?, ?, ?, ?, ?)", p.getTitle(), p.getContent(), p.getCategory(), p.getFileUrl(),
             p.isPublished(), p.getAuthorId()) == 1;
     }
 
     public boolean updatePost(Post p) {
-        return DBConnect.executeUpdate("update posts set title=?, content=?, category=?, is_published=?"
-            + " where id=?", p.getTitle(), p.getContent(), p.getCategory(),
+        return DBConnect.executeUpdate("update posts set title=?, content=?, category=?, file_url=?, is_published=?"
+            + " where id=?", p.getTitle(), p.getContent(), p.getCategory(), p.getFileUrl(),
             p.isPublished(), p.getId()) == 1;
     }
 
@@ -1328,8 +1394,8 @@ Lấy từ chú thích trong `dormitory.sql`, cộng thêm những điều hiể
 | R5 | SV gửi yêu cầu | Đơn của mình, `approved`, còn hiệu lực; **chưa có yêu cầu nào đang chờ**; có lý do. `extend`: ngày mới > ngày trả hiện tại (tối đa +1 năm). `checkout`: đã nhận phòng, hôm nay ≤ ngày muốn trả < ngày trả hiện tại. `cancel`: chưa nhận phòng | `RequestBO.createRequest` |
 | R6 | Admin duyệt yêu cầu | Yêu cầu đang `pending`; **kiểm tra lại R5** (tình hình có thể đã đổi); cập nhật 2 bảng trong 1 transaction | `RequestBO.approve` |
 | R7 | Phòng | Số phòng không trùng; sức chứa 1–20; giá ≥ 0; sức chứa mới ≥ số người đang ở; phòng đang có người thì không đổi nam/nữ; phòng đã có đơn thì **không xóa** (chỉ đóng) | `RoomBO` |
-| R8 | Tài khoản | Username/email/MSSV không trùng; mật khẩu ≥ 6 ký tự; không đổi giới tính khi đang có đơn; admin không tự xóa / tự hạ quyền mình; không xóa user đã có đơn hoặc đã viết bài | `UserBO` |
-| R9 | Bài viết | Guest chỉ xem bài `is_published = true` | `PostBO` |
+| R8 | Tài khoản | Username/email/MSSV không trùng; mật khẩu ≥ 6 ký tự; không đổi giới tính khi đang có đơn; admin không tự xóa / tự hạ quyền mình; không xóa user đã có đơn hoặc đã viết bài; địa chỉ không bắt buộc, tối đa 255 ký tự | `UserBO` |
+| R9 | Bài viết / Biểu mẫu | Guest chỉ xem bài `is_published = true`; trang chủ **không** hiện bài `form`. Biểu mẫu (`category = 'form'`) **bắt buộc có file**, chỉ nhận `.pdf/.doc/.docx`, tối đa 5MB; sửa bài mà không chọn file mới thì giữ file cũ | `PostBO` |
 | R10 | Góp ý | Chỉ sinh viên gửi; nội dung 1–1000 ký tự. SV chỉ xóa góp ý **của mình** khi **chưa được trả lời**. Admin trả lời phải có nội dung (trả lời lại thì ghi đè). **Chỉ công khai góp ý đã trả lời**; guest chỉ thấy góp ý `is_published = true`. Xóa sinh viên thì góp ý tự xóa theo (`ON DELETE CASCADE`), nên `UserBO.deleteUser` không cần chặn | `FeedbackBO` |
 
 > Vì sao kiểm tra ở BO mà không chỉ dựa vào CSDL? CSDL có `CHECK`, `UNIQUE`, khóa ngoại, nhưng khi vi phạm thì chỉ ném `SQLException` khó hiểu. BO kiểm tra trước để trả về câu thông báo tiếng Việt rõ ràng; ràng buộc của CSDL là lớp bảo vệ cuối cùng.
@@ -1370,6 +1436,7 @@ public class UserBO {
         if (!u.getEmail().matches("^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+$")) return "Email không hợp lệ!";
         if (userDAO.isExist("email", u.getEmail(), excludeId)) return "Email đã được sử dụng!";
         if (!u.getPhone().isEmpty() && !u.getPhone().matches("0\\d{9,10}")) return "Số điện thoại không hợp lệ!";
+        if (u.getAddress() != null && u.getAddress().length() > 255) return "Địa chỉ tối đa 255 ký tự!";
         if (u.getGender() != null && !u.getGender().equals("male") && !u.getGender().equals("female"))
             return "Giới tính không hợp lệ!";
         return null;
@@ -1713,11 +1780,16 @@ package model.bo;
 import java.util.ArrayList;
 import model.bean.Post;
 import model.dao.PostDAO;
+import util.UploadUtil;
 
 public class PostBO {
+    // loai file bieu mau duoc phep tai len
+    public static final String[] FORM_EXTENSIONS = {".pdf", ".doc", ".docx"};
+
     PostDAO postDAO = new PostDAO();
 
     public ArrayList<Post> getPublishedPosts(String category) { return postDAO.getPublishedPosts(category); }
+    public ArrayList<Post> getPublishedForms() { return postDAO.getPublishedPosts("form"); }
     public ArrayList<Post> getAllPosts() { return postDAO.getAllPosts(); }
     public Post getPostById(int id) { return postDAO.getPostById(id); }
 
@@ -1727,13 +1799,33 @@ public class PostBO {
         return (p != null && p.isPublished()) ? p : null;
     }
 
-    public String savePost(Post p) {
+    private boolean isCategory(String c) {
+        return c.equals("news") || c.equals("notice") || c.equals("rule") || c.equals("form");
+    }
+
+    // kiem tra du lieu form TRUOC khi Servlet luu file len o dia (sai thi khong luu file thua)
+    // newFileName = ten file admin vua chon, "" = khong chon file moi
+    public String checkPost(Post p, String newFileName) {
         if (p.getTitle().isEmpty() || p.getTitle().length() > 200) return "Tiêu đề 1–200 ký tự!";
         if (p.getContent().isEmpty()) return "Vui lòng nhập nội dung!";
-        if (!p.getCategory().equals("news") && !p.getCategory().equals("notice") && !p.getCategory().equals("rule"))
-            return "Chuyên mục không hợp lệ!";
+        if (!isCategory(p.getCategory())) return "Chuyên mục không hợp lệ!";
+        if (!newFileName.isEmpty() && !UploadUtil.hasExtension(newFileName, FORM_EXTENSIONS))
+            return "Chỉ nhận file .pdf, .doc, .docx!";
+        if (p.getId() > 0) {
+            Post old = postDAO.getPostById(p.getId());
+            if (old == null) return "Không tìm thấy bài viết!";
+            if (p.getFileUrl() == null) p.setFileUrl(old.getFileUrl());   // khong chon file moi -> giu file cu
+        }
+        boolean hasFile = !newFileName.isEmpty() || (p.getFileUrl() != null && !p.getFileUrl().isEmpty());
+        if (p.getCategory().equals("form") && !hasFile) return "Biểu mẫu phải có file đính kèm!";
+        return null;
+    }
+
+    // luu vao CSDL; file (neu co) da duoc Servlet luu va gan vao p.fileUrl
+    public String savePost(Post p) {
+        String loi = checkPost(p, "");
+        if (loi != null) return loi;
         if (p.getId() == 0) return postDAO.insertPost(p) ? null : "Thêm bài thất bại!";
-        if (postDAO.getPostById(p.getId()) == null) return "Không tìm thấy bài viết!";
         return postDAO.updatePost(p) ? null : "Cập nhật bài thất bại!";
     }
 
@@ -1809,6 +1901,8 @@ public class FeedbackBO {
 ```
 
 > Vì sao `deleteByUser` kiểm tra `f.getUserId() != user.getId()`? Nếu không, sinh viên A sửa `id` trong form (F12) là xóa được góp ý của sinh viên B. Báo chung "Không tìm thấy" để không lộ là góp ý đó có tồn tại.
+
+> Vì sao tách `checkPost` riêng? Servlet cần biết dữ liệu **đúng hết chưa** trước khi ghi file xuống ổ đĩa (mục 6.14). `savePost` gọi lại `checkPost(p, "")` để dù ai gọi `savePost` trực tiếp thì quy tắc vẫn được kiểm tra. Khi sửa bài mà không chọn file mới (`fileUrl == null`), `checkPost` lấy lại `fileUrl` cũ trong CSDL → file cũ được giữ nguyên.
 
 ---
 
@@ -1943,6 +2037,7 @@ User user = (User) request.getAttribute("currentUser");
 |---|---|---|---|---|
 | `/HomeServlet` | `HomeServlet` | Bài đã xuất bản, lọc `category` | – | `/guest/index.jsp` |
 | `/PostServlet?id=` | `PostServlet` | Chi tiết 1 bài (`PostBO.getPublishedPost`) | – | `/guest/post.jsp` |
+| `/FormServlet` | `FormServlet` | Biểu mẫu đã đăng, kèm link tải | – | `/guest/forms.jsp` |
 | `/RoomListServlet` | `RoomListServlet` | Danh sách phòng đang mở cho khách xem | – | `/guest/rooms.jsp` |
 | `/LoginServlet` | `LoginServlet` | Form đăng nhập | Kiểm tra đăng nhập | `/guest/login.jsp` |
 | `/SignupServlet` | `SignupServlet` | Form đăng ký tài khoản | `UserBO.signup` | `/guest/signup.jsp` |
@@ -1955,12 +2050,12 @@ User user = (User) request.getAttribute("currentUser");
 | `/admin/RegistrationServlet` | `AdminRegistrationServlet` | Danh sách đơn, lọc `status` | `approve`, `reject` | `/admin/registrations.jsp` |
 | `/admin/RequestServlet` | `AdminRequestServlet` | Danh sách yêu cầu, lọc `status` | `approve`, `reject` | `/admin/requests.jsp` |
 | `/admin/UserServlet` | `AdminUserServlet` | Tìm tài khoản `keyword` | `role`, `delete` | `/admin/users.jsp` |
-| `/admin/PostServlet` | `AdminPostServlet` | Danh sách / form `add`, `edit` | `save`, `delete` | `/admin/posts.jsp`, `/admin/post-form.jsp` |
+| `/admin/PostServlet` | `AdminPostServlet` | Danh sách / form `add`, `edit` (`?action=add&category=form` = thêm biểu mẫu) | `save` (multipart, có file), `delete` | `/admin/posts.jsp`, `/admin/post-form.jsp` |
 | `/FeedbackServlet` | `FeedbackServlet` | Góp ý đã công khai (kèm trả lời) | – | `/guest/feedback.jsp` |
 | `/user/FeedbackServlet` | `UserFeedbackServlet` | Góp ý của tôi + form gửi | `send`, `delete` | `/user/feedback.jsp` |
 | `/admin/FeedbackServlet` | `AdminFeedbackServlet` | Danh sách góp ý, lọc `status` (mặc định `new`) | `reply`, `publish`, `hide`, `delete` | `/admin/feedbacks.jsp` |
 
-Dưới đây là code đầy đủ của các Servlet tiêu biểu; những Servlet còn lại viết theo đúng khuôn của Servlet cùng loại (ghi trong cột cuối của bảng ở mục 6.14).
+Dưới đây là code đầy đủ của các Servlet tiêu biểu; những Servlet còn lại viết theo đúng khuôn của Servlet cùng loại (ghi trong cột cuối của bảng ở mục 6.16).
 
 ### 6.3. `src/controller/LoginServlet.java`
 
@@ -2519,16 +2614,156 @@ public class AdminFeedbackServlet extends HttpServlet {
 
 > Trả lời xong góp ý đang lọc `status=new` sẽ biến khỏi danh sách (vì đã thành `replied`) — đúng ý "hộp thư cần xử lý". Muốn bấm "Công khai" ngay sau khi trả lời thì chọn bộ lọc *Đã trả lời* hoặc *Tất cả*.
 
-### 6.14. Các Servlet còn lại — tự viết theo khuôn
+### 6.14. `src/controller/AdminPostServlet.java` — thêm/sửa bài, **upload biểu mẫu**
+
+Khung giống hệt `AdminRoomServlet` (mục 6.9). Khác ở chỗ form thêm/sửa có ô chọn file, nên:
+
+1. Servlet phải có **`@MultipartConfig`** — thiếu dòng này thì `request.getPart(...)` báo lỗi và mọi `getParameter(...)` của form multipart đều trả về `null`.
+2. Form JSP phải có **`enctype="multipart/form-data"`**, ô file là `<input type="file" name="file" accept=".pdf,.doc,.docx">`.
+3. Thứ tự xử lý: **kiểm tra (BO) → lưu file → ghi CSDL**. Nhập sai tiêu đề thì không lưu file nào thừa xuống ổ đĩa.
+4. File được lưu vào thư mục `uploads/forms` **của web đang chạy** (`getServletContext().getRealPath(...)`), CSDL chỉ lưu đường dẫn tương đối `uploads/forms/1732700000000.pdf`. JSP tạo link tải bằng `request.getContextPath() + "/" + post.getFileUrl()`.
+
+```java
+package controller;
+
+import java.io.IOException;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
+import model.bean.Post;
+import model.bean.User;
+import model.bo.PostBO;
+import util.UploadUtil;
+import util.WebUtil;
+
+@WebServlet("/admin/PostServlet")
+@MultipartConfig(maxFileSize = 5 * 1024 * 1024, maxRequestSize = 6 * 1024 * 1024)   // file toi da 5MB
+public class AdminPostServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    // GET: ?action=add | ?action=edit&id=.. | khong co action = danh sach
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        PostBO postBO = new PostBO();
+        String action = WebUtil.trim(request.getParameter("action"));
+
+        if (action.equals("add") || action.equals("edit")) {
+            Post post = new Post();                             // them moi: form trong
+            post.setCategory(WebUtil.trim(request.getParameter("category")).equals("form") ? "form" : "news");
+            if (action.equals("edit")) {
+                post = postBO.getPostById(WebUtil.toInt(request.getParameter("id")));
+                if (post == null) {
+                    WebUtil.redirect(request, response, "/admin/PostServlet", "loi", "Không tìm thấy bài viết!");
+                    return;
+                }
+            }
+            request.setAttribute("post", post);
+            request.getRequestDispatcher("/admin/post-form.jsp").forward(request, response);
+            return;
+        }
+
+        request.setAttribute("postList", postBO.getAllPosts());
+        request.getRequestDispatcher("/admin/posts.jsp").forward(request, response);
+    }
+
+    // POST: action=save (them/sua, form multipart co o chon file) | action=delete
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        PostBO postBO = new PostBO();
+        String action = WebUtil.trim(request.getParameter("action"));
+
+        if (action.equals("delete")) {
+            String loi = postBO.deletePost(WebUtil.toInt(request.getParameter("id")));
+            if (loi == null) WebUtil.redirect(request, response, "/admin/PostServlet", "ok", "Đã xóa bài viết!");
+            else WebUtil.redirect(request, response, "/admin/PostServlet", "loi", loi);
+            return;
+        }
+
+        // 1. doc o chon file (file qua 5MB -> Tomcat nem loi ngay tai day)
+        Part part;
+        try {
+            part = request.getPart("file");
+        } catch (Exception e) {
+            WebUtil.redirect(request, response, "/admin/PostServlet", "loi", "File tải lên tối đa 5MB!");
+            return;
+        }
+
+        // 2. gom du lieu form vao Post
+        User user = (User) request.getAttribute("currentUser");
+        Post post = new Post();
+        post.setId(WebUtil.toInt(request.getParameter("id")));          // input hidden, 0 = them moi
+        post.setTitle(WebUtil.trim(request.getParameter("title")));
+        post.setContent(WebUtil.trim(request.getParameter("content")));
+        post.setCategory(WebUtil.trim(request.getParameter("category")));
+        post.setPublished("on".equals(request.getParameter("published")));   // checkbox
+        post.setAuthorId(user.getId());                                // chi dung khi them moi
+        String fileName = UploadUtil.getFileName(part);                  // "" = khong chon file moi
+
+        // 3. kiem tra truoc -> dung moi luu file -> roi moi ghi CSDL
+        String loi = postBO.checkPost(post, fileName);
+        if (loi == null && !fileName.isEmpty()) {
+            String newName = UploadUtil.save(part, getServletContext().getRealPath("/uploads/forms"));
+            if (newName == null) loi = "Lưu file thất bại, vui lòng thử lại!";
+            else post.setFileUrl("uploads/forms/" + newName);
+        }
+        if (loi == null) loi = postBO.savePost(post);
+
+        if (loi != null) {
+            // loi: quay lai form, giu nguyen du lieu da nhap (file phai chon lai)
+            request.setAttribute("thongbao", loi);
+            request.setAttribute("post", post);
+            request.getRequestDispatcher("/admin/post-form.jsp").forward(request, response);
+            return;
+        }
+        WebUtil.redirect(request, response, "/admin/PostServlet", "ok",
+                post.getId() == 0 ? "Đã thêm bài: " + post.getTitle() : "Đã cập nhật bài: " + post.getTitle());
+    }
+}
+```
+
+> **Lưu ý khi demo:** `getRealPath("/uploads/forms")` là thư mục web **đã deploy trong Tomcat** (không phải `WebContent` trong project). Bấm *Publish Server (Full)* có thể xóa các file đã upload → upload lại. 2 biểu mẫu mẫu trong CSDL nằm ở `assets/forms/` (có trong Git) nên không bị mất.
+
+### 6.15. `src/controller/FormServlet.java` — trang Biểu mẫu
+
+Ai cũng xem và tải được (guest, sinh viên, admin), nên đặt ở `/FormServlet` — **không** nằm trong `/user/*` để không phải qua `AuthFilter`.
+
+```java
+package controller;
+
+import java.io.IOException;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import model.bo.PostBO;
+
+// trang bieu mau: ai cung xem / tai duoc (guest, user, admin) -> khong nam trong /user/*
+@WebServlet("/FormServlet")
+public class FormServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        request.setAttribute("formList", new PostBO().getPublishedForms());
+        request.getRequestDispatcher("/guest/forms.jsp").forward(request, response);
+    }
+}
+```
+
+### 6.16. Các Servlet còn lại — tự viết theo khuôn
 
 | Servlet | Viết giống | Ghi chú |
 |---|---|---|
 | `PostServlet` | `HomeServlet` | `PostBO.getPublishedPost(id)`; `null` → redirect `/HomeServlet` kèm lỗi "Không tìm thấy bài viết" |
 | `RoomListServlet` | `HomeServlet` | `RoomBO.getRoomList("", "", "open")` |
-| `SignupServlet` | `LoginServlet` + phần "save" của `AdminRoomServlet` | Gom form vào `User` (`username`, `fullName`, `email`, `phone`, `gender`, `studentCode`), gọi `UserBO.signup(user, password, confirm)`; lỗi → forward lại form kèm `user`; đúng → redirect `/LoginServlet` "Đăng ký thành công". `gender` rỗng thì `setGender(null)` |
-| `ProfileServlet` (`/account/ProfileServlet`) | `UserRegistrationServlet` | GET: `currentUser` → JSP. POST `action=save` → `UserBO.updateProfile(currentUser, formUser)`; `action=password` → `UserBO.changePassword(...)`. Nhớ cập nhật `session.fullName` sau khi đổi tên |
+| `SignupServlet` | `LoginServlet` + phần "save" của `AdminRoomServlet` | Gom form vào `User` (`username`, `fullName`, `email`, `phone`, `address`, `gender`, `studentCode`), gọi `UserBO.signup(user, password, confirm)`; lỗi → forward lại form kèm `user`; đúng → redirect `/LoginServlet` "Đăng ký thành công". `gender` rỗng thì `setGender(null)` |
+| `ProfileServlet` (`/account/ProfileServlet`) | `UserRegistrationServlet` | GET: `currentUser` → JSP. POST `action=save` → gom `fullName`, `email`, `phone`, `address`, `gender` vào `formUser` → `UserBO.updateProfile(currentUser, formUser)`; `action=password` → `UserBO.changePassword(...)`. Nhớ cập nhật `session.fullName` sau khi đổi tên |
 | `AdminUserServlet` | `AdminRequestServlet` | GET: `UserBO.getUserList(keyword)`. POST `action=role` → `changeRole(currentUser, id, role)`; `action=delete` → `deleteUser(currentUser, id)` |
-| `AdminPostServlet` | `AdminRoomServlet` | Gom form vào `Post`; `authorId` = `currentUser.getId()` khi thêm mới; checkbox `published`: `"on".equals(request.getParameter("published"))` |
 | `FeedbackServlet` (guest, `/FeedbackServlet`) | `HomeServlet` | `request.setAttribute("feedbackList", new FeedbackBO().getPublishedFeedbacks())` → `/guest/feedback.jsp`. Không nằm trong `/user/*` nên không qua `AuthFilter` — khách chưa đăng nhập vẫn xem được |
 
 ---
@@ -2550,6 +2785,10 @@ Phần backend xong khi mỗi JSP biết **nhận gì** và **gửi gì**. Bản
 | `user/feedback.jsp` | `feedbackList` (`ArrayList<Feedback>`), `thongbao`, `content` (nội dung vừa gõ khi gửi lỗi) | `action=send`, `content` (`<textarea>`) · hoặc `action=delete`, `id` (chỉ hiện nút khi `!f.isReplied()`) → POST `/user/FeedbackServlet` |
 | `admin/feedbacks.jsp` | `status`, `feedbackList` | `action=reply`, `id`, `status`, `reply` · `action=publish|hide|delete`, `id`, `status` → POST `/admin/FeedbackServlet` |
 | `guest/feedback.jsp` | `feedbackList` (chỉ góp ý đã công khai) | – |
+| `admin/posts.jsp` | `postList` (`ArrayList<Post>`, gồm cả bản nháp và biểu mẫu) | Link `?action=add`, `?action=add&category=form`, `?action=edit&id=` · form `action=delete`, `id` → POST `/admin/PostServlet` |
+| `admin/post-form.jsp` | `post`, `thongbao` | Form **`enctype="multipart/form-data"`**: `action=save`, `id` (hidden), `title`, `content`, `category` (`news`/`notice`/`rule`/`form`), `published` (checkbox), `file` (`<input type="file" accept=".pdf,.doc,.docx">`). Đang sửa và `post.getFileUrl() != null` → hiện link file hiện tại |
+| `guest/forms.jsp` | `formList` (`ArrayList<Post>`, chỉ biểu mẫu đã đăng) | Link tải: `<%= request.getContextPath() %>/<%= f.getFileUrl() %>` |
+| `guest/signup.jsp`, `account/profile.jsp` | `user` (khi nhập sai), `currentUser` (hồ sơ) | Thêm ô `address` (không bắt buộc, tối đa 255 ký tự) |
 
 Mọi trang đọc thông báo sau redirect giống `search.jsp` của thầy:
 
@@ -2604,6 +2843,12 @@ Kiểm thử theo dữ liệu demo (mật khẩu đều là `123456`, mốc "hô
 | `admin` | Trả lời #2 rồi công khai | `status = replied`, `replied_at` có giờ; guest thấy cả #1 và #2 |
 | guest | `/FeedbackServlet` (lúc mới import) | Chỉ thấy góp ý #1 |
 | guest | `/user/FeedbackServlet` | Bị đẩy về trang đăng nhập |
+| guest | `/FormServlet` | Thấy 2 biểu mẫu (#5, #6), bấm tải được file `.docx` |
+| guest | `/HomeServlet` | Chỉ thấy 3 tin (#1, #2, #3) — **không** lẫn biểu mẫu |
+| `admin` | Thêm biểu mẫu mà không chọn file | "Biểu mẫu phải có file đính kèm!" |
+| `admin` | Thêm biểu mẫu, chọn file `.exe` / `.jpg` | "Chỉ nhận file .pdf, .doc, .docx!" |
+| `admin` | Sửa tiêu đề biểu mẫu #5, không chọn file mới | Lưu được, `file_url` vẫn là `assets/forms/don-xin-o-ktx.docx` |
+| `sv001` | Sửa hồ sơ, địa chỉ dài hơn 255 ký tự | "Địa chỉ tối đa 255 ký tự!" |
 
 ---
 
@@ -2621,5 +2866,7 @@ Kiểm thử theo dữ liệu demo (mật khẩu đều là `123456`, mốc "hô
 | Tiếng Việt từ CSDL thành `???` | URL JDBC thiếu `characterEncoding=UTF-8`, hoặc CSDL không phải `utf8mb4` |
 | `NullPointerException` khi mở thẳng file JSP | JSP phải mở qua Servlet (Servlet mới `setAttribute` dữ liệu) |
 | `Check constraint ... is violated` trong log | BO thiếu một bước kiểm tra → bổ sung vào BO |
-| Đăng nhập đúng `123456` mà vẫn báo sai | Chưa chạy `UPDATE users SET password = SHA2('123456', 256);` |
+| Đăng nhập đúng `123456` mà vẫn báo sai | Đang dùng `dormitory.sql` cũ (mật khẩu `$2y$10$...`) → import bản mới, hoặc chạy `UPDATE users SET password = SHA2('123456', 256);` |
 | Đơn "hết hạn" sai ngày | Giờ máy chạy MySQL khác giờ máy chạy Tomcat (chỉ xảy ra khi MySQL ở máy khác) → thêm `&serverTimezone=Asia/Ho_Chi_Minh` vào cuối URL trong `DBConnect` |
+| `AdminPostServlet`: mọi `getParameter` trả về `null`, hoặc lỗi `Unable to process parts as no multi-part configuration has been provided` | Thiếu `@MultipartConfig` trên Servlet, hoặc form JSP thiếu `enctype="multipart/form-data"` |
+| File đã upload biến mất sau khi Publish | File nằm trong thư mục deploy của Tomcat (mục 6.14) → upload lại; file mẫu cố định thì để ở `WebContent/assets/forms/` |

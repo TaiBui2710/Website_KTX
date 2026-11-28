@@ -1,5 +1,6 @@
 WebContent/WEB-INF/classes/
 WebContent/assets/images/uploads/
+WebContent/uploads/
 *.class
 .DS_Store
 Thumbs.db

@@ -9,6 +9,7 @@ public class User {
     private String fullName;
     private String email;
     private String phone;
+    private String address;
     private String gender;
     private String studentCode;
     private String role;
@@ -60,6 +61,14 @@ public class User {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public String getGender() {
